@@ -58,17 +58,7 @@ var consoleLogger;
         logger.prototype.showLog = function (mes) {
             if (console && this.logging && mes) {
                 //console is present show them the logs
-                var strData = '';
-                if (typeof (mes) === 'object') {
-                    strData = 'Message:' + mes.message + '\n' + 'Stack:' + mes.stack + '\n\n' + 'Event Time:' + mes.eventDT;
-                } else if (typeof (mes) === 'string') {
-                    strData = 'Message:' + mes.message;
-                } else {
-                    //no supported format pass directly
-                    strData = 'Unsupported format:' + mes;
-                }
-
-                console.log(strData);
+                console.log('Message:' + mes.message + '\n' + 'Stack:' + mes.stack + '\n\n' + 'Event Time:' + mes.eventDT);
             }
         };
         return logger;
