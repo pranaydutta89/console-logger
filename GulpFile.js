@@ -8,19 +8,16 @@ var uglify = require('gulp-uglify');
 var typescript = require('gulp-tsc');
 var rename = require('gulp-rename');
 var foreach = require('gulp-foreach');
+
 //Prod ready
 
 
 gulp.task('usemin',['tsc'], function(){
-    gulp.src(['./dist/*.js'])
-        .pipe(usemin({
+    gulp.src('dist/logger.js') // path to your files
+        .pipe(uglify())
+        .pipe(gulp.dest('dist/logger.min'));
 
-            js: ['concat', uglify({
-                mangle:false,
-                compress:false
-            })]
-        }))
-        .pipe(gulp.dest('dist/'));
+
 });
 
 //End Prod ready
