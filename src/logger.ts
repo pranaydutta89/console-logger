@@ -17,60 +17,48 @@ module consoleLogger{
         public logging:boolean =false;
         private logHistory:Array<logWrapper> =[];
         setAndShowLog(mes){
-            var temp =  new logWrapper();
-            if(typeof(mes) === 'object' )
-            {
 
-                if(mes.message)
-                    temp.message = $ ? $.trim(mes.message) :mes.message;
-
-
+            var logWarpperObj =  new logWrapper();
+            logWarpperObj.eventDT =new Date();
+            if(typeof(mes) === 'object' ) {
+                 if(mes.message)
+                    logWarpperObj.message = $ ? $.trim(mes.message) :mes.message;
+                else
+                     logWarpperObj.message='NA';
 
                 if(mes.stack)
-                    temp.stack = $ ? $.trim(mes.stack): mes.stack;
-
-                temp.eventDT =new Date();
-                this.logHistory.push(temp);
-                this.showLog(temp)
-
+                    logWarpperObj.stack = $ ? $.trim(mes.stack): mes.stack;
+                else
+                    logWarpperObj.stack='NA';
             }
             else if(typeof(mes) ==='string'){
 
+                logWarpperObj.message = $ ?$.trim(mes) :mes;
+                logWarpperObj.stack ='NA';
 
-
-                temp.message = $ ?$.trim(mes) :mes;
-
-                temp.stack ='';
-
-                temp.eventDT =new Date();
-                this.logHistory.push(temp);
-                this.showLog(temp);
             }
             else{
                 //no supported format
-                temp.message ='UnSupported format:'+ mes;
+                logWarpperObj.message ='UnSupported format, logging actual data:'+ mes;
+                logWarpperObj.stack ='NA';
 
-                temp.stack ='';
-
-                temp.eventDT =new Date();
-                this.logHistory.push(temp);
-                this.showLog(temp);
             }
 
-
+            this.logHistory.push(logWarpperObj);
+            this.showLog(logWarpperObj);
 
         }
 
         showHistory(){
 
             if(this.logHistory.length ==0) {
-                this.showLog('No recent activity yet !!');
+                this.showLog('No recent activity yet!!');
             }
             else
             {
-                for(var x in this.logHistory){
-                    this.showLog('Sr No:' + (parseInt(x,10)+1).toString());
-                    this.showLog(this.logHistory[x]);
+                for(var idx in this.logHistory){
+                    this.showLog('Sr No:' + (parseInt(idx,10)+1).toString());
+                    this.showLog(this.logHistory[idx]);
                 }
             }
         }
@@ -78,34 +66,25 @@ module consoleLogger{
             if(console && this.logging && mes)
             {
                 //console is present show them the logs
+                var strData='';
                 if(typeof(mes) === 'object')
                 {
 
-
-                    var message =$ ? $.trim(mes.message) :mes.message;
-
-                    var stack;
-                    if(mes.stack)
-                        stack = $? $.trim(mes.stack): mes.stack;
-                    else
-                        stack ='';
-
-
-                    console.log('Message:' + message +'\n' +'Stack:' + stack  + '\n\n'+ 'Event Time:' + mes.eventDT);
+                    strData ='Message:' + mes.message +'\n' +'Stack:' + mes.stack  + '\n\n'+ 'Event Time:' + mes.eventDT;
 
                 }
                 else if(typeof(mes) ==='string'){
 
-                    var message = $ ?$.trim(mes) :mes;
-                    console.log('Message:'+ message);
+
+                    strData='Message:'+ mes.message;
 
                 }
                 else{
                     //no supported format pass directly
-                    console.log('Unsupported format:'+ mes);
+                    strData='Unsupported format:'+ mes;
                 }
-            }else{
-                //console not supported
+
+                console.log(strData);
             }
 
         }
