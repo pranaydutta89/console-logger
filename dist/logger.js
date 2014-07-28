@@ -4,13 +4,13 @@
 /// <reference path="../dependencies/jquery.d.ts"/>
 var consoleLogger;
 (function (consoleLogger) {
-    var logWrapper = (function () {
-        function logWrapper() {
+    var logWrapperClass = (function () {
+        function logWrapperClass() {
             this.browserDetails = window.navigator.userAgent;
         }
-        return logWrapper;
+        return logWrapperClass;
     })();
-    consoleLogger.logWrapper = logWrapper;
+    consoleLogger.logWrapperClass = logWrapperClass;
 
     var logger = (function () {
         function logger(shouldLog) {
@@ -20,7 +20,7 @@ var consoleLogger;
             this.logging = shouldLog;
         }
         logger.prototype.setAndShowLog = function (mes) {
-            var logWarpperObj = new logWrapper();
+            var logWarpperObj = new logWrapperClass();
             logWarpperObj.eventDT = new Date();
             if (typeof (mes) === 'object') {
                 if (mes.message)

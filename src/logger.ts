@@ -4,7 +4,7 @@
 /// <reference path="../dependencies/jquery.d.ts"/>
 
 module consoleLogger{
-    export class logWrapper{
+    export class logWrapperClass{
         public message:string;
         public stack:string;
         public eventDT : Date ;
@@ -15,10 +15,10 @@ module consoleLogger{
     export class logger{
 
         public logging:boolean =false;
-        private logHistory:Array<logWrapper> =[];
+        private logHistory:Array<logWrapperClass> =[];
         setAndShowLog(mes){
 
-            var logWarpperObj =  new logWrapper();
+            var logWarpperObj =  new logWrapperClass();
             logWarpperObj.eventDT =new Date();
             if(typeof(mes) === 'object' ) {
                  if(mes.message)
