@@ -12,12 +12,26 @@ var consoleLogger;
     })();
     consoleLogger.logWrapperClass = logWrapperClass;
 
+    var sendDataSettings = (function () {
+        function sendDataSettings() {
+            this.sendInBatchCount = 1;
+        }
+        return sendDataSettings;
+    })();
+    consoleLogger.sendDataSettings = sendDataSettings;
+
     var logger = (function () {
-        function logger(shouldLog) {
-            this.shouldLog = shouldLog;
-            this.logging = false;
+        function logger(shouldLog, sendDataOptions) {
+            this.logging = true;
             this.logHistory = [];
-            this.logging = shouldLog;
+            if (typeof ($) === 'function') {
+                this.logging = shouldLog;
+                if (sendDataOptions)
+                    this.sendData = sendDataOptions;
+            } else {
+                //jQuery is undefined show error to console
+                this.messageManager('jQuery is not present');
+            }
         }
         logger.prototype.setAndShowLog = function (mes) {
             var logWarpperObj = new logWrapperClass();
@@ -47,12 +61,18 @@ var consoleLogger;
 
         logger.prototype.showHistory = function () {
             if (this.logHistory.length == 0) {
-                this.showLog('No recent activity yet!!');
+                this.messageManager('No recent activity yet!!');
             } else {
                 for (var idx in this.logHistory) {
-                    this.showLog('Sr No:' + (parseInt(idx, 10) + 1).toString());
+                    this.messageManager('Sr No:' + (parseInt(idx, 10) + 1).toString());
                     this.showLog(this.logHistory[idx]);
                 }
+            }
+        };
+
+        logger.prototype.sendDataToService = function (logHistory) {
+            if (this.sendData) {
+                // $.ajax()
             }
         };
         logger.prototype.showLog = function (mes) {
@@ -60,6 +80,13 @@ var consoleLogger;
                 //console is present show them the logs
                 console.log('Message:' + mes.message + '\n' + 'Stack:' + mes.stack + '\n\n' + 'Event Time:' + mes.eventDT);
             }
+        };
+
+        logger.prototype.messageManager = function (message) {
+            //its basically sysout for user
+            var msg = new logWrapperClass();
+            msg.message = message;
+            this.showLog(msg);
         };
         return logger;
     })();

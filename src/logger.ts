@@ -12,9 +12,17 @@ module consoleLogger{
 
     }
 
+    export class sendDataSettings{
+        public url:string;
+        public sendInBatchCount:number =1;
+
+    }
+
     export class logger{
 
-        public logging:boolean =false;
+        public logging:boolean =true;
+        public sendData:sendDataSettings;
+
         private logHistory:Array<logWrapperClass> =[];
         setAndShowLog(mes){
 
@@ -52,17 +60,24 @@ module consoleLogger{
         showHistory(){
 
             if(this.logHistory.length ==0) {
-                this.showLog('No recent activity yet!!');
+                this.messageManager('No activity yet!!');
             }
             else
             {
                 for(var idx in this.logHistory){
-                    this.showLog('Sr No:' + (parseInt(idx,10)+1).toString());
+                    this.messageManager('Sr No:' + (parseInt(idx,10)+1).toString());
                     this.showLog(this.logHistory[idx]);
                 }
             }
         }
-        private showLog(mes){
+
+        private sendDataToService(logHistory:Array<logWrapperClass>){
+               if(this.sendData)
+               {
+                  // $.ajax()
+               }
+          }
+        private showLog(mes:logWrapperClass){
             if(console && this.logging && mes)
             {
                 //console is present show them the logs
@@ -70,9 +85,27 @@ module consoleLogger{
             }
 
         }
-        constructor(public shouldLog){
 
-            this.logging =shouldLog;
+        private messageManager(message:string){
+            //its basically sysout for user
+            var msg = new logWrapperClass();
+            msg.message=message;
+            this.showLog(msg);
+        }
+        constructor(shouldLog,sendDataOptions?:sendDataSettings){
+            if(typeof ($) === 'function') {
+                this.logging = shouldLog;
+                if (sendDataOptions)
+                    this.sendData = sendDataOptions;
+            }
+            else{
+                //jQuery is undefined show error to console
+                this.messageManager('jQuery is not present');
+            }
+
+
+
+
 
 
         }
