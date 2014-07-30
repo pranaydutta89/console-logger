@@ -6,6 +6,7 @@
 module consoleLogger{
     export class logWrapperClass{
         public message:string;
+        public messageType:string;
         public stack:string;
         public eventDT : Date ;
         public browserDetails:string = window.navigator.userAgent;
@@ -14,7 +15,9 @@ module consoleLogger{
 
     export class sendDataSettings{
         public url:string;
-        public sendInBatchCount:number =1;
+        //by default we will send fatal and error to server
+        public toSend:number =1; //fatal,error :1 , all:2
+
 
     }
 
@@ -24,15 +27,19 @@ module consoleLogger{
         public sendData:sendDataSettings;
 
         private logHistory:Array<logWrapperClass> =[];
-        setAndShowLog(mes){
-
+        //private functions
+        private performCommonJob(message:logWrapperClass){
+            this.logHistory.push(message);
+            this.showLog(message);
+        }
+        private messageFormatting(mes:any){
             var logWarpperObj =  new logWrapperClass();
             logWarpperObj.eventDT =new Date();
             if(typeof(mes) === 'object' ) {
-                 if(mes.message)
+                if(mes.message)
                     logWarpperObj.message = $ ? $.trim(mes.message) :mes.message;
                 else
-                     logWarpperObj.message='NA';
+                    logWarpperObj.message='NA';
 
                 if(mes.stack)
                     logWarpperObj.stack = $ ? $.trim(mes.stack): mes.stack;
@@ -51,13 +58,77 @@ module consoleLogger{
                 logWarpperObj.stack ='NA';
 
             }
+            return logWarpperObj;
+        }
 
-            this.logHistory.push(logWarpperObj);
-            this.showLog(logWarpperObj);
+
+        private sendDataToService(logData:logWrapperClass){
+               if(this.sendData)
+               {
+                   var that =this;
+                  $.ajax({
+                      url:this.sendData.url,
+                      method:'POST',
+                      data:logData
+                  }).done(function(d){
+                      //sending successful
+                  }).fail(function(error,xhr,status){
+                     that.messageManager('AJAX error:'+ error)
+                  })
+               }
+          }
+        private showLog(mes:logWrapperClass){
+            if(console && this.logging && mes)
+            {
+                //console is present show them the logs
+                console.log('Type:'+mes.messageType +'\n\nMessage:' + mes.message +'\n\nStack:' + mes.stack  + '\n\nEvent Time:' + mes.eventDT);
+            }
 
         }
 
-        showHistory(){
+        private messageManager(message:string){
+            //its basically sysout for user
+            var msg = new logWrapperClass();
+            msg.message=message;
+            this.showLog(msg);
+        }
+        //end private functions
+        //public functions
+
+        errorLog =(message:any) =>{
+
+            //in error push to history ,show log and send to server
+            var logWarpperObj:logWrapperClass =this.messageFormatting(message);
+            logWarpperObj.messageType='ERROR';
+            this.performCommonJob(logWarpperObj);
+            this.sendDataToService(logWarpperObj);
+        }
+
+        fatalLog =(message:any) =>{
+            var logWarpperObj:logWrapperClass =this.messageFormatting(message);
+            logWarpperObj.messageType='FATAL';
+            this.performCommonJob(logWarpperObj);
+            this.sendDataToService(logWarpperObj);
+        }
+
+        debugLog =(message:any) =>{
+            var logWarpperObj:logWrapperClass =this.messageFormatting(message);
+            logWarpperObj.messageType='DEBUG';
+            this.performCommonJob(logWarpperObj);
+            if(this.sendData.toSend ==2) //2 means to send all
+                this.sendDataToService(logWarpperObj);
+        }
+
+        warnLog =(message:any)=>{
+            var logWarpperObj:logWrapperClass =this.messageFormatting(message);
+            logWarpperObj.messageType='WARN';
+            this.performCommonJob(logWarpperObj);
+            if(this.sendData.toSend ==2) //2 means to send all
+                this.sendDataToService(logWarpperObj);
+        }
+
+
+        history(){
 
             if(this.logHistory.length ==0) {
                 this.messageManager('No activity yet!!');
@@ -71,27 +142,8 @@ module consoleLogger{
             }
         }
 
-        private sendDataToService(logHistory:Array<logWrapperClass>){
-               if(this.sendData)
-               {
-                  // $.ajax()
-               }
-          }
-        private showLog(mes:logWrapperClass){
-            if(console && this.logging && mes)
-            {
-                //console is present show them the logs
-                console.log('Message:' + mes.message +'\n' +'Stack:' + mes.stack  + '\n\n'+ 'Event Time:' + mes.eventDT);
-            }
+        //end public functions
 
-        }
-
-        private messageManager(message:string){
-            //its basically sysout for user
-            var msg = new logWrapperClass();
-            msg.message=message;
-            this.showLog(msg);
-        }
         constructor(shouldLog,sendDataOptions?:sendDataSettings){
             if(typeof ($) === 'function') {
                 this.logging = shouldLog;

@@ -14,16 +14,48 @@ var consoleLogger;
 
     var sendDataSettings = (function () {
         function sendDataSettings() {
-            this.sendInBatchCount = 1;
+            //by default we will send fatal and error to server
+            this.toSend = 1;
         }
         return sendDataSettings;
     })();
     consoleLogger.sendDataSettings = sendDataSettings;
 
     var logger = (function () {
+        //end public functions
         function logger(shouldLog, sendDataOptions) {
+            var _this = this;
             this.logging = true;
             this.logHistory = [];
+            //end private functions
+            //public functions
+            this.errorLog = function (message) {
+                //in error push to history ,show log and send to server
+                var logWarpperObj = _this.messageFormatting(message);
+                logWarpperObj.messageType = 'ERROR';
+                _this.performCommonJob(logWarpperObj);
+                _this.sendDataToService(logWarpperObj);
+            };
+            this.fatalLog = function (message) {
+                var logWarpperObj = _this.messageFormatting(message);
+                logWarpperObj.messageType = 'FATAL';
+                _this.performCommonJob(logWarpperObj);
+                _this.sendDataToService(logWarpperObj);
+            };
+            this.debugLog = function (message) {
+                var logWarpperObj = _this.messageFormatting(message);
+                logWarpperObj.messageType = 'DEBUG';
+                _this.performCommonJob(logWarpperObj);
+                if (_this.sendData.toSend == 2)
+                    _this.sendDataToService(logWarpperObj);
+            };
+            this.warnLog = function (message) {
+                var logWarpperObj = _this.messageFormatting(message);
+                logWarpperObj.messageType = 'WARN';
+                _this.performCommonJob(logWarpperObj);
+                if (_this.sendData.toSend == 2)
+                    _this.sendDataToService(logWarpperObj);
+            };
             if (typeof ($) === 'function') {
                 this.logging = shouldLog;
                 if (sendDataOptions)
@@ -33,7 +65,12 @@ var consoleLogger;
                 this.messageManager('jQuery is not present');
             }
         }
-        logger.prototype.setAndShowLog = function (mes) {
+        //private functions
+        logger.prototype.performCommonJob = function (message) {
+            this.logHistory.push(message);
+            this.showLog(message);
+        };
+        logger.prototype.messageFormatting = function (mes) {
             var logWarpperObj = new logWrapperClass();
             logWarpperObj.eventDT = new Date();
             if (typeof (mes) === 'object') {
@@ -54,31 +91,27 @@ var consoleLogger;
                 logWarpperObj.message = 'UnSupported format, logging actual data:' + mes;
                 logWarpperObj.stack = 'NA';
             }
-
-            this.logHistory.push(logWarpperObj);
-            this.showLog(logWarpperObj);
+            return logWarpperObj;
         };
 
-        logger.prototype.showHistory = function () {
-            if (this.logHistory.length == 0) {
-                this.messageManager('No recent activity yet!!');
-            } else {
-                for (var idx in this.logHistory) {
-                    this.messageManager('Sr No:' + (parseInt(idx, 10) + 1).toString());
-                    this.showLog(this.logHistory[idx]);
-                }
-            }
-        };
-
-        logger.prototype.sendDataToService = function (logHistory) {
+        logger.prototype.sendDataToService = function (logData) {
             if (this.sendData) {
-                // $.ajax()
+                var that = this;
+                $.ajax({
+                    url: this.sendData.url,
+                    method: 'POST',
+                    data: logData
+                }).done(function (d) {
+                    //sending successful
+                }).fail(function (error, xhr, status) {
+                    that.messageManager('AJAX error:' + error);
+                });
             }
         };
         logger.prototype.showLog = function (mes) {
             if (console && this.logging && mes) {
                 //console is present show them the logs
-                console.log('Message:' + mes.message + '\n' + 'Stack:' + mes.stack + '\n\n' + 'Event Time:' + mes.eventDT);
+                console.log('Type:' + mes.messageType + '\n\nMessage:' + mes.message + '\n\nStack:' + mes.stack + '\n\nEvent Time:' + mes.eventDT);
             }
         };
 
@@ -87,6 +120,17 @@ var consoleLogger;
             var msg = new logWrapperClass();
             msg.message = message;
             this.showLog(msg);
+        };
+
+        logger.prototype.history = function () {
+            if (this.logHistory.length == 0) {
+                this.messageManager('No activity yet!!');
+            } else {
+                for (var idx in this.logHistory) {
+                    this.messageManager('Sr No:' + (parseInt(idx, 10) + 1).toString());
+                    this.showLog(this.logHistory[idx]);
+                }
+            }
         };
         return logger;
     })();
