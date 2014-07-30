@@ -15,7 +15,7 @@ module consoleLogger{
 
     export class sendDataSettings{
         public url:string;
-        //by default we will send fatal and error to server
+        //default will to send whole data
         public toSend:number =1; //fatal,error :1 , all:2
 
 
@@ -73,7 +73,7 @@ module consoleLogger{
                   }).done(function(d){
                       //sending successful
                   }).fail(function(error,xhr,status){
-                     that.messageManager('AJAX error:'+ error)
+                     that.messageManager('AJAX error:'+ error.statusText)
                   })
                }
           }
@@ -81,7 +81,10 @@ module consoleLogger{
             if(console && this.logging && mes)
             {
                 //console is present show them the logs
+                if(mes.messageType)
                 console.log('Type:'+mes.messageType +'\n\nMessage:' + mes.message +'\n\nStack:' + mes.stack  + '\n\nEvent Time:' + mes.eventDT);
+                else
+                console.log(mes.message);
             }
 
         }
@@ -115,7 +118,7 @@ module consoleLogger{
             var logWarpperObj:logWrapperClass =this.messageFormatting(message);
             logWarpperObj.messageType='DEBUG';
             this.performCommonJob(logWarpperObj);
-            if(this.sendData.toSend ==2) //2 means to send all
+            if(this.sendData && this.sendData.toSend ==2) //2 means to send all
                 this.sendDataToService(logWarpperObj);
         }
 
@@ -123,7 +126,7 @@ module consoleLogger{
             var logWarpperObj:logWrapperClass =this.messageFormatting(message);
             logWarpperObj.messageType='WARN';
             this.performCommonJob(logWarpperObj);
-            if(this.sendData.toSend ==2) //2 means to send all
+            if(this.sendData && this.sendData.toSend ==2) //2 means to send all
                 this.sendDataToService(logWarpperObj);
         }
 

@@ -14,7 +14,7 @@ var consoleLogger;
 
     var sendDataSettings = (function () {
         function sendDataSettings() {
-            //by default we will send fatal and error to server
+            //default will to send whole data
             this.toSend = 1;
         }
         return sendDataSettings;
@@ -46,14 +46,14 @@ var consoleLogger;
                 var logWarpperObj = _this.messageFormatting(message);
                 logWarpperObj.messageType = 'DEBUG';
                 _this.performCommonJob(logWarpperObj);
-                if (_this.sendData.toSend == 2)
+                if (_this.sendData && _this.sendData.toSend == 2)
                     _this.sendDataToService(logWarpperObj);
             };
             this.warnLog = function (message) {
                 var logWarpperObj = _this.messageFormatting(message);
                 logWarpperObj.messageType = 'WARN';
                 _this.performCommonJob(logWarpperObj);
-                if (_this.sendData.toSend == 2)
+                if (_this.sendData && _this.sendData.toSend == 2)
                     _this.sendDataToService(logWarpperObj);
             };
             if (typeof ($) === 'function') {
@@ -104,14 +104,17 @@ var consoleLogger;
                 }).done(function (d) {
                     //sending successful
                 }).fail(function (error, xhr, status) {
-                    that.messageManager('AJAX error:' + error);
+                    that.messageManager('AJAX error:' + error.statusText);
                 });
             }
         };
         logger.prototype.showLog = function (mes) {
             if (console && this.logging && mes) {
                 //console is present show them the logs
-                console.log('Type:' + mes.messageType + '\n\nMessage:' + mes.message + '\n\nStack:' + mes.stack + '\n\nEvent Time:' + mes.eventDT);
+                if (mes.messageType)
+                    console.log('Type:' + mes.messageType + '\n\nMessage:' + mes.message + '\n\nStack:' + mes.stack + '\n\nEvent Time:' + mes.eventDT);
+                else
+                    console.log(mes.message);
             }
         };
 
