@@ -16,6 +16,7 @@ var consoleLogger;
         function sendDataSettings() {
             //default will to send whole data
             this.toSend = 1;
+            this.headers = "application/json; charset=utf-8";
         }
         return sendDataSettings;
     })();
@@ -26,6 +27,7 @@ var consoleLogger;
         function logger(shouldLog, sendDataOptions) {
             var _this = this;
             this.logging = true;
+            this.sendData = new sendDataSettings();
             this.logHistory = [];
             //end private functions
             //public functions
@@ -58,8 +60,16 @@ var consoleLogger;
             };
             if (typeof ($) === 'function') {
                 this.logging = shouldLog;
-                if (sendDataOptions)
-                    this.sendData = sendDataOptions;
+                if (sendDataOptions) {
+                    if (sendDataOptions.toSend)
+                        this.sendData.toSend = sendDataOptions.toSend;
+
+                    if (sendDataOptions.headers)
+                        this.sendData.headers = sendDataOptions.headers;
+
+                    if (sendDataOptions.url)
+                        this.sendData.url = sendDataOptions.url;
+                }
             } else {
                 //jQuery is undefined show error to console
                 this.messageManager('jQuery is not present');
@@ -100,10 +110,11 @@ var consoleLogger;
                 $.ajax({
                     url: this.sendData.url,
                     method: 'POST',
-                    data: logData
+                    contentType: this.sendData.headers,
+                    data: JSON.stringify(logData)
                 }).done(function (d) {
                     //sending successful
-                }).fail(function (error, xhr, status) {
+                }).fail(function (error) {
                     that.messageManager('AJAX error:' + error.statusText);
                 });
             }

@@ -17,14 +17,14 @@ module consoleLogger{
         public url:string;
         //default will to send whole data
         public toSend:number =1; //fatal,error :1 , all:2
-
+        public headers:string ="application/json; charset=utf-8";
 
     }
 
     export class logger{
 
         public logging:boolean =true;
-        public sendData:sendDataSettings;
+        public sendData:sendDataSettings =new sendDataSettings();
 
         private logHistory:Array<logWrapperClass> =[];
         //private functions
@@ -65,14 +65,16 @@ module consoleLogger{
         private sendDataToService(logData:logWrapperClass){
                if(this.sendData)
                {
+
                    var that =this;
                   $.ajax({
                       url:this.sendData.url,
                       method:'POST',
-                      data:logData
+                      contentType:this.sendData.headers,
+                      data:JSON.stringify(logData)
                   }).done(function(d){
                       //sending successful
-                  }).fail(function(error,xhr,status){
+                  }).fail(function(error){
                      that.messageManager('AJAX error:'+ error.statusText)
                   })
                }
@@ -150,8 +152,17 @@ module consoleLogger{
         constructor(shouldLog,sendDataOptions?:sendDataSettings){
             if(typeof ($) === 'function') {
                 this.logging = shouldLog;
-                if (sendDataOptions)
-                    this.sendData = sendDataOptions;
+                if (sendDataOptions) {
+
+                    if(sendDataOptions.toSend)
+                        this.sendData.toSend = sendDataOptions.toSend;
+
+                    if(sendDataOptions.headers)
+                    this.sendData.headers = sendDataOptions.headers;
+
+                    if(sendDataOptions.url)
+                        this.sendData.url= sendDataOptions.url;
+                }
             }
             else{
                 //jQuery is undefined show error to console

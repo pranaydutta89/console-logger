@@ -2,7 +2,7 @@
  * Created by prandutt on 7/30/2014.
  */
     /// <reference path="../dist/logger.min/logger.js"/>
-var loggerObj = new consoleLogger.logger(true,{url:'aaa',toSend:2});
+var loggerObj = new consoleLogger.logger(false,{url:'aaa',toSend:2});
 
 
 loggerObj.debugLog('this is a debug log');
