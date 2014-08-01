@@ -22,8 +22,7 @@ How to do ?
  </code>
 
 2) Use: 
-   
-    a) DEBUG
+  a)
     
   <code>
       loggerObj.debug('this is a debug log');//or
@@ -80,4 +79,13 @@ How to do ?
     //even if logging is false then also data will be sent to server
   </code>
   
-  
+ 
+ Browser compatibility 
+ 
+ IE 6+, Chrome-1 ,opera -1 ,firefox -1
+ 
+ 
+ Dependency
+ 
+ - jQuery > 1.7.1 
+ - IE6 to IE8 json2/json3
