@@ -100,7 +100,7 @@ module consoleLogger{
         //end private functions
         //public functions
 
-        errorLog =(message:any) =>{
+        error =(message:any) =>{
 
             //in error push to history ,show log and send to server
             var logWarpperObj:logWrapperClass =this.messageFormatting(message);
@@ -109,14 +109,14 @@ module consoleLogger{
             this.sendDataToService(logWarpperObj);
         }
 
-        fatalLog =(message:any) =>{
+        fatal =(message:any) =>{
             var logWarpperObj:logWrapperClass =this.messageFormatting(message);
             logWarpperObj.messageType='FATAL';
             this.performCommonJob(logWarpperObj);
             this.sendDataToService(logWarpperObj);
         }
 
-        debugLog =(message:any) =>{
+        debug =(message:any) =>{
             var logWarpperObj:logWrapperClass =this.messageFormatting(message);
             logWarpperObj.messageType='DEBUG';
             this.performCommonJob(logWarpperObj);
@@ -124,7 +124,7 @@ module consoleLogger{
                 this.sendDataToService(logWarpperObj);
         }
 
-        warnLog =(message:any)=>{
+        warn =(message:any)=>{
             var logWarpperObj:logWrapperClass =this.messageFormatting(message);
             logWarpperObj.messageType='WARN';
             this.performCommonJob(logWarpperObj);

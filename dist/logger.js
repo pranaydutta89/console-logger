@@ -31,27 +31,27 @@ var consoleLogger;
             this.logHistory = [];
             //end private functions
             //public functions
-            this.errorLog = function (message) {
+            this.error = function (message) {
                 //in error push to history ,show log and send to server
                 var logWarpperObj = _this.messageFormatting(message);
                 logWarpperObj.messageType = 'ERROR';
                 _this.performCommonJob(logWarpperObj);
                 _this.sendDataToService(logWarpperObj);
             };
-            this.fatalLog = function (message) {
+            this.fatal = function (message) {
                 var logWarpperObj = _this.messageFormatting(message);
                 logWarpperObj.messageType = 'FATAL';
                 _this.performCommonJob(logWarpperObj);
                 _this.sendDataToService(logWarpperObj);
             };
-            this.debugLog = function (message) {
+            this.debug = function (message) {
                 var logWarpperObj = _this.messageFormatting(message);
                 logWarpperObj.messageType = 'DEBUG';
                 _this.performCommonJob(logWarpperObj);
                 if (_this.sendData && _this.sendData.toSend == 2)
                     _this.sendDataToService(logWarpperObj);
             };
-            this.warnLog = function (message) {
+            this.warn = function (message) {
                 var logWarpperObj = _this.messageFormatting(message);
                 logWarpperObj.messageType = 'WARN';
                 _this.performCommonJob(logWarpperObj);
