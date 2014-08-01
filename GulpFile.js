@@ -45,3 +45,10 @@ gulp.task('tsc', function(){
 
 
 //End Type script compiler
+
+//watcher
+
+gulp.task('default',function(){
+    return gulp.watch('src/*.ts',['tsc']);
+});
+//end watcher
