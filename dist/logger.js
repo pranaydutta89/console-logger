@@ -122,10 +122,28 @@ var consoleLogger;
         logger.prototype.showLog = function (mes) {
             if (console && this.logging && mes) {
                 //console is present show them the logs
+                var message;
                 if (mes.messageType)
-                    console.log('Type:' + mes.messageType + '\n\nMessage:' + mes.message + '\n\nStack:' + mes.stack + '\n\nEvent Time:' + mes.eventDT);
+                    message = 'Type:' + mes.messageType + '\n\nMessage:' + mes.message + '\n\nStack:' + mes.stack + '\n\nEvent Time:' + mes.eventDT;
                 else
-                    console.log(mes.message);
+                    message = mes.message;
+
+                switch (mes.messageType.toLowerCase()) {
+                    case 'warn':
+                        console.warn(message);
+                        break;
+                    case 'fatal':
+                    case 'error':
+                        console.error(message);
+                        break;
+                    case 'info':
+                        console.info(message);
+                        break;
+                    case 'debug':
+                    case 'log':
+                        console.log(message);
+                        break;
+                }
             }
         };
 
@@ -133,6 +151,7 @@ var consoleLogger;
             //its basically sysout for user
             var msg = new logWrapperClass();
             msg.message = message;
+            msg.messageType = 'log';
             this.showLog(msg);
         };
 
