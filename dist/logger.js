@@ -32,6 +32,8 @@ var consoleLogger;
             this.toSend = 1;
             this.headers = "application/json; charset=utf-8";
             this.transport = ['jquery', 'xhr'];
+            //for angular it will have its own service to send
+            this.isFramework = false;
         }
         return sendDataSettings;
     })();
@@ -48,37 +50,54 @@ var consoleLogger;
             //public functions
             this.error = function (message) {
                 //in error push to history ,show log and send to server
-                _this.sendDataToService(_this.performCommonJob(message, 2 /* error */));
+                var logData = _this.performCommonJob(message, 2 /* error */);
+                _this.sendDataToService(logData);
+                return logData;
             };
             this.fatal = function (message) {
-                _this.sendDataToService(_this.performCommonJob(message, 1 /* fatal */));
+                var logData = _this.performCommonJob(message, 1 /* fatal */);
+                _this.sendDataToService(logData);
+                return logData;
             };
             this.debug = function (message) {
-                if (_this.sendData && _this.sendData.toSend == 2)
-                    _this.sendDataToService(_this.performCommonJob(message, 3 /* debug */));
+                if (_this.sendData && _this.sendData.toSend == 2) {
+                    var logData = _this.performCommonJob(message, 3 /* debug */);
+                    _this.sendDataToService(logData);
+                    return logData;
+                }
             };
             this.warn = function (message) {
-                if (_this.sendData && _this.sendData.toSend == 2)
-                    _this.sendDataToService(_this.performCommonJob(message, 0 /* warn */));
+                if (_this.sendData && _this.sendData.toSend == 2) {
+                    var logData = _this.performCommonJob(message, 0 /* warn */);
+                    _this.sendDataToService(logData);
+                    return logData;
+                }
             };
             if (typeof ($) === 'function') {
                 this.logging = shouldLog;
-                if (sendDataOptions) {
-                    if (sendDataOptions.toSend)
-                        this.sendData.toSend = sendDataOptions.toSend;
-
-                    if (sendDataOptions.headers)
-                        this.sendData.headers = sendDataOptions.headers;
-
-                    if (sendDataOptions.url)
-                        this.sendData.url = sendDataOptions.url;
-                }
+                this.config(sendDataOptions);
             } else {
                 //jQuery is undefined show error to console
                 this.messageManager('jQuery is not present');
             }
         }
         //private functions
+        logger.prototype.config = function (sendDataOptions) {
+            if (sendDataOptions) {
+                if (sendDataOptions.toSend)
+                    this.sendData.toSend = sendDataOptions.toSend;
+
+                if (sendDataOptions.headers)
+                    this.sendData.headers = sendDataOptions.headers;
+
+                if (sendDataOptions.url)
+                    this.sendData.url = sendDataOptions.url;
+
+                if (sendDataOptions.isFramework)
+                    this.sendData.isFramework = sendDataOptions.isFramework;
+            }
+        };
+
         logger.prototype.performCommonJob = function (message, logT) {
             var logWarpperObj = this.messageFormatting(message);
             logWarpperObj.messageType = logT;
@@ -111,8 +130,11 @@ var consoleLogger;
             return logWarpperObj;
         };
 
+        logger.prototype.getConfig = function () {
+            return this.sendData;
+        };
         logger.prototype.sendDataToService = function (logData) {
-            if (this.sendData) {
+            if (this.sendData && !this.sendData.isFramework) {
                 //TODO:fallback to xhr if jqquery is not present
                 var that = this;
                 $.ajax({
@@ -191,28 +213,18 @@ var consoleLogger;
     var loggerService = (function () {
         function loggerService($http) {
             this.$http = $http;
-            this.logging = true;
+            this.isConfigDone = false;
         }
         loggerService.prototype.config = function (shouldLog, sendDataOptions) {
-            this.logging = shouldLog;
-            if (sendDataOptions) {
-                this.sendData = new consoleLogger.sendDataSettings();
-                if (sendDataOptions.toSend)
-                    this.sendData.toSend = sendDataOptions.toSend;
-
-                if (sendDataOptions.headers)
-                    this.sendData.headers = sendDataOptions.headers;
-
-                if (sendDataOptions.url)
-                    this.sendData.url = sendDataOptions.url;
-            }
-            this.loggerVar = new consoleLogger.logger(this.logging, this.sendData);
+            this.isConfigDone = true;
+            sendDataOptions.isFramework = true;
+            this.loggerVar = new consoleLogger.logger(shouldLog, sendDataOptions);
         };
 
         loggerService.prototype.error = function (message) {
-            if (this.sendData) {
+            if (this.isConfigDone) {
                 //config done
-                this.loggerVar.error(message);
+                this.sendDataToService(this.loggerVar.error(message));
             } else {
                 //initial config not done
                 this.configNotDone();
@@ -220,9 +232,9 @@ var consoleLogger;
         };
 
         loggerService.prototype.debug = function (message) {
-            if (this.sendData) {
+            if (this.isConfigDone) {
                 //config done
-                this.loggerVar.debug(message);
+                this.sendDataToService(this.loggerVar.debug(message));
             } else {
                 //initial config not done
                 this.configNotDone();
@@ -230,9 +242,9 @@ var consoleLogger;
         };
 
         loggerService.prototype.fatal = function (message) {
-            if (this.sendData) {
+            if (this.isConfigDone) {
                 //config done
-                this.loggerVar.fatal(message);
+                this.sendDataToService(this.loggerVar.fatal(message));
             } else {
                 //initial config not done
                 this.configNotDone();
@@ -240,9 +252,9 @@ var consoleLogger;
         };
 
         loggerService.prototype.warn = function (message) {
-            if (this.sendData) {
+            if (this.isConfigDone) {
                 //config done
-                this.loggerVar.warn(message);
+                this.sendDataToService(this.loggerVar.warn(message));
             } else {
                 //initial config not done
                 this.configNotDone();
@@ -250,7 +262,7 @@ var consoleLogger;
         };
 
         loggerService.prototype.history = function () {
-            if (this.sendData) {
+            if (this.isConfigDone) {
                 //config done
                 this.loggerVar.history();
             } else {
@@ -258,11 +270,22 @@ var consoleLogger;
                 this.configNotDone();
             }
         };
-
+        loggerService.prototype.sendDataToService = function (logData) {
+            this.$http({
+                url: this.loggerVar.getConfig().url,
+                method: 'POST',
+                data: JSON.stringify(logData),
+                headers: this.loggerVar.getConfig().headers
+            }).then(function () {
+                //success
+            }, function () {
+                //error
+            });
+        };
         loggerService.prototype.configNotDone = function () {
             if (!this.loggerVar)
                 this.loggerVar = new consoleLogger.logger(true);
-            this.loggerVar.messageManager('Initial config not done, try consoleLogger.config ');
+            this.loggerVar.messageManager('Initial config not done, try doing consoleLogger.config ');
         };
         loggerService.$inject = ['$http'];
         return loggerService;

@@ -30,6 +30,7 @@ module consoleLogger{
         public headers:string ="application/json; charset=utf-8";
         public transport:Array<string>  = ['jquery','xhr'];// how you want to send data
         //for angular it will have its own service to send
+        public isFramework:boolean = false;
 
     }
 
@@ -42,6 +43,22 @@ module consoleLogger{
         private logHistory:Array<logWrapperClass> =[];
         //private functions
 
+        private config(sendDataOptions:sendDataSettings){
+            if (sendDataOptions) {
+
+                if(sendDataOptions.toSend)
+                    this.sendData.toSend = sendDataOptions.toSend;
+
+                if(sendDataOptions.headers)
+                    this.sendData.headers = sendDataOptions.headers;
+
+                if(sendDataOptions.url)
+                    this.sendData.url= sendDataOptions.url;
+
+                if(sendDataOptions.isFramework)
+                    this.sendData.isFramework= sendDataOptions.isFramework;
+            }
+        }
 
         private performCommonJob(message:any,logT:logType):logWrapperClass{
 
@@ -83,9 +100,11 @@ module consoleLogger{
             return logWarpperObj;
         }
 
-
-        private sendDataToService(logData:logWrapperClass){
-               if(this.sendData)
+        public getConfig():sendDataSettings{
+            return this.sendData;
+        }
+        public sendDataToService(logData:logWrapperClass){
+               if(this.sendData && !this.sendData.isFramework)
                {
                   //TODO:fallback to xhr if jqquery is not present
                    var that =this;
@@ -138,27 +157,39 @@ module consoleLogger{
         //end private functions
         //public functions
 
-        error =(message:any) =>{
+        error =(message:any):logWrapperClass =>{
 
             //in error push to history ,show log and send to server
-            this.sendDataToService(this.performCommonJob(message,logType.error))
+            var logData =this.performCommonJob(message,logType.error);
+            this.sendDataToService(logData);
+            return logData;
         }
 
-        fatal =(message:any) =>{
-
-            this.sendDataToService(this.performCommonJob(message,logType.fatal))
+        fatal =(message:any):logWrapperClass =>{
+            var logData =this.performCommonJob(message,logType.fatal);
+            this.sendDataToService(logData)
+            return logData;
         }
 
-        debug =(message:any) =>{
+        debug =(message:any):logWrapperClass => {
+
+            if (this.sendData && this.sendData.toSend == 2) //2 means to send all
+            {
+                var logData =this.performCommonJob(message,logType.debug);
+                this.sendDataToService(logData)
+                return logData;
+            }
+
+        }
+
+        warn =(message:any):logWrapperClass=>{
 
             if(this.sendData && this.sendData.toSend ==2) //2 means to send all
-                this.sendDataToService(this.performCommonJob(message,logType.debug))
-        }
-
-        warn =(message:any)=>{
-
-            if(this.sendData && this.sendData.toSend ==2) //2 means to send all
-                this.sendDataToService(this.performCommonJob(message,logType.warn))
+            {
+                var logData =this.performCommonJob(message,logType.warn);
+                this.sendDataToService(logData)
+                return logData;
+            }
         }
 
 
@@ -181,17 +212,7 @@ module consoleLogger{
         constructor(shouldLog,sendDataOptions?:sendDataSettings){
             if(typeof ($) === 'function') {
                 this.logging = shouldLog;
-                if (sendDataOptions) {
-
-                    if(sendDataOptions.toSend)
-                        this.sendData.toSend = sendDataOptions.toSend;
-
-                    if(sendDataOptions.headers)
-                    this.sendData.headers = sendDataOptions.headers;
-
-                    if(sendDataOptions.url)
-                        this.sendData.url= sendDataOptions.url;
-                }
+                this.config(sendDataOptions);
             }
             else{
                 //jQuery is undefined show error to console

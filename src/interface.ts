@@ -10,6 +10,7 @@ module consoleLogger{
         warn:(message:any) => void;
         debug:(message:any) => void;
         history():void;
+        sendDataToService:(logData:logWrapperClass) => void
 
 
 

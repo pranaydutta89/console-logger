@@ -14,28 +14,18 @@ module consoleLogger {
 
     export class loggerService implements ILogger{
          private loggerVar:consoleLogger.logger;
-         private logging:boolean =true;
-         private sendData:consoleLogger.sendDataSettings;
-         public config(shouldLog:boolean ,sendDataOptions?:any) {
-              this.logging=shouldLog;
-             if (sendDataOptions) {
-                   this.sendData = new consoleLogger.sendDataSettings();
-                 if(sendDataOptions.toSend)
-                     this.sendData.toSend = sendDataOptions.toSend;
+         private isConfigDone:boolean=false;
+         public config(shouldLog:boolean ,sendDataOptions?:consoleLogger.sendDataSettings) {
 
-                 if(sendDataOptions.headers)
-                     this.sendData.headers = sendDataOptions.headers;
-
-                 if(sendDataOptions.url)
-                     this.sendData.url= sendDataOptions.url;
-             }
-             this.loggerVar = new consoleLogger.logger(this.logging,this.sendData);
+              this.isConfigDone=true;
+              sendDataOptions.isFramework=true;
+              this.loggerVar = new consoleLogger.logger(shouldLog,sendDataOptions);
          }
 
         public error(message:any){
-           if(this.sendData){
+           if(this.isConfigDone){
                //config done
-               this.loggerVar.error(message);
+               this.sendDataToService(this.loggerVar.error(message));
 
            }
            else{
@@ -46,9 +36,9 @@ module consoleLogger {
         }
 
         public debug(message:any){
-            if(this.sendData){
+            if(this.isConfigDone){
                 //config done
-                this.loggerVar.debug(message);
+                this.sendDataToService(this.loggerVar.debug(message));
 
             }
             else{
@@ -59,9 +49,9 @@ module consoleLogger {
         }
 
         public fatal(message:any){
-            if(this.sendData){
+            if(this.isConfigDone){
                 //config done
-                this.loggerVar.fatal(message);
+                this.sendDataToService(this.loggerVar.fatal(message));
 
             }
             else{
@@ -72,9 +62,9 @@ module consoleLogger {
         }
 
         public warn(message:any){
-            if(this.sendData){
+            if(this.isConfigDone){
                 //config done
-                this.loggerVar.warn(message);
+                this.sendDataToService(this.loggerVar.warn(message));
 
             }
             else{
@@ -85,7 +75,7 @@ module consoleLogger {
         }
 
         public history(){
-            if(this.sendData){
+            if(this.isConfigDone){
                 //config done
                 this.loggerVar.history();
 
@@ -95,11 +85,22 @@ module consoleLogger {
                 this.configNotDone();
             }
         }
-
+        public sendDataToService(logData:logWrapperClass){
+            this.$http({
+                url:this.loggerVar.getConfig().url,
+                method: 'POST',
+                data:JSON.stringify(logData),
+                headers: this.loggerVar.getConfig().headers
+            }).then(function(){
+                //success
+            },function(){
+                //error
+            });
+        }
         private configNotDone(){
             if(!this.loggerVar)
                 this.loggerVar =new consoleLogger.logger(true);
-            this.loggerVar.messageManager('Initial config not done, try consoleLogger.config ')
+            this.loggerVar.messageManager('Initial config not done, try doing consoleLogger.config ')
         }
         static $inject = ['$http'];
 
