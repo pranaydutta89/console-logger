@@ -1,7 +1,11 @@
 /**
+* Created by prandutt on 8/6/2014.
+*/
+/**
 * Created by prandutt on 7/28/2014.
 */
 /// <reference path="../dependencies/jquery.d.ts"/>
+/// <reference path="interface.ts"/>
 var consoleLogger;
 (function (consoleLogger) {
     var logWrapperClass = (function () {
@@ -169,4 +173,102 @@ var consoleLogger;
     })();
     consoleLogger.logger = logger;
 })(consoleLogger || (consoleLogger = {}));
+/**
+* Created by prandutt on 8/6/2014.
+*/
+/// <reference path="../dependencies/angular.d.ts"/>
+/// <reference path="interface.ts"/>
+var consoleLogger;
+(function (consoleLogger) {
+    consoleLogger.app = function () {
+        return angular.module('consoleLogger', []).service(consoleLogger);
+    }();
+
+    var loggerService = (function () {
+        function loggerService($http) {
+            this.$http = $http;
+            this.logging = true;
+        }
+        loggerService.prototype.config = function (shouldLog, sendDataOptions) {
+            this.logging = shouldLog;
+            if (sendDataOptions) {
+                this.sendData = new consoleLogger.sendDataSettings();
+                if (sendDataOptions.toSend)
+                    this.sendData.toSend = sendDataOptions.toSend;
+
+                if (sendDataOptions.headers)
+                    this.sendData.headers = sendDataOptions.headers;
+
+                if (sendDataOptions.url)
+                    this.sendData.url = sendDataOptions.url;
+            }
+            this.loggerVar = new consoleLogger.logger(this.logging, this.sendData);
+        };
+
+        loggerService.prototype.error = function (message) {
+            if (this.sendData) {
+                //config done
+                this.loggerVar.error(message);
+            } else {
+                //initial config not done
+                this.configNotDone();
+            }
+        };
+
+        loggerService.prototype.debug = function (message) {
+            if (this.sendData) {
+                //config done
+                this.loggerVar.debug(message);
+            } else {
+                //initial config not done
+                this.configNotDone();
+            }
+        };
+
+        loggerService.prototype.fatal = function (message) {
+            if (this.sendData) {
+                //config done
+                this.loggerVar.fatal(message);
+            } else {
+                //initial config not done
+                this.configNotDone();
+            }
+        };
+
+        loggerService.prototype.warn = function (message) {
+            if (this.sendData) {
+                //config done
+                this.loggerVar.warn(message);
+            } else {
+                //initial config not done
+                this.configNotDone();
+            }
+        };
+
+        loggerService.prototype.history = function () {
+            if (this.sendData) {
+                //config done
+                this.loggerVar.history();
+            } else {
+                //initial config not done
+                this.configNotDone();
+            }
+        };
+
+        loggerService.prototype.configNotDone = function () {
+            if (!this.loggerVar)
+                this.loggerVar = new consoleLogger.logger(true);
+            this.loggerVar.messageManager('Initial config not done, try consoleLogger.config ');
+        };
+        loggerService.$inject = ['$http'];
+        return loggerService;
+    })();
+    consoleLogger.loggerService = loggerService;
+})(consoleLogger || (consoleLogger = {}));
+/**
+* Created by prandutt on 8/6/2014.
+*/
+//files to compile
+/// <reference path="logger.ts"/>
+/// <reference path="angularLogger.ts"/>
 //# sourceMappingURL=logger.js.map

@@ -2,7 +2,7 @@
  * Created by prandutt on 7/28/2014.
  */
 /// <reference path="../dependencies/jquery.d.ts"/>
-
+/// <reference path="interface.ts"/>
 module consoleLogger{
     export class logWrapperClass{
         public message:string;
@@ -22,7 +22,7 @@ module consoleLogger{
     }
 
 
-    export class logger{
+    export class logger implements ILogger{
 
         private logging:boolean =true;
         private sendData:sendDataSettings =new sendDataSettings();
@@ -107,7 +107,7 @@ module consoleLogger{
 
         }
 
-        private messageManager(message:string){
+        public messageManager(message:string){
             //its basically sysout for user
             var msg = new logWrapperClass();
             msg.message=message;
@@ -194,4 +194,6 @@ module consoleLogger{
         }
 
     }
-}
+
+
+   }

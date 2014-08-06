@@ -14,7 +14,12 @@ var foreach = require('gulp-foreach');
 
 gulp.task('usemin',['tsc'], function(){
     gulp.src('dist/logger.js') // path to your files
-        .pipe(uglify())
+        .pipe(usemin({
+           js: ['concat', uglify({
+                mangle:false,
+                compress:false
+            })]
+        }))
         .pipe(gulp.dest('dist/logger.min'));
 
 
@@ -29,7 +34,7 @@ gulp.task('usemin',['tsc'], function(){
 
 
 gulp.task('tsc', function(){
-    return gulp.src('src/logger.ts')
+    return gulp.src('src/core.ts')
         .pipe(typescript({
             tmpDir: '.tmp',
             sourcemap: true,
