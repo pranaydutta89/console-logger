@@ -4,9 +4,19 @@
 /// <reference path="../dependencies/jquery.d.ts"/>
 /// <reference path="interface.ts"/>
 module consoleLogger{
+
+   export enum logType{
+        warn,
+        fatal,
+        error ,
+        debug,
+        log,
+        info
+    }
+
     export class logWrapperClass{
         public message:string;
-        public messageType:string;
+        public messageType:logType;
         public stack:string;
         public eventDT : Date ;
         public browserDetails:string = window.navigator.userAgent;
@@ -18,6 +28,8 @@ module consoleLogger{
         //default will to send whole data
         public toSend:number =1; //fatal,error :1 , all:2
         public headers:string ="application/json; charset=utf-8";
+        public transport:Array<string>  = ['jquery','xhr'];// how you want to send data
+        //for angular it will have its own service to send
 
     }
 
@@ -29,10 +41,19 @@ module consoleLogger{
 
         private logHistory:Array<logWrapperClass> =[];
         //private functions
-        private performCommonJob(message:logWrapperClass){
-            this.logHistory.push(message);
-            this.showLog(message);
+
+
+        private performCommonJob(message:any,logT:logType):logWrapperClass{
+
+            var logWarpperObj:logWrapperClass =this.messageFormatting(message);
+            logWarpperObj.messageType=logT;
+            this.logHistory.push(logWarpperObj);
+            this.showLog(logWarpperObj);
+            return logWarpperObj;
         }
+
+
+
         private messageFormatting(mes:any){
             var logWarpperObj =  new logWrapperClass();
             logWarpperObj.eventDT =new Date();
@@ -66,7 +87,7 @@ module consoleLogger{
         private sendDataToService(logData:logWrapperClass){
                if(this.sendData)
                {
-
+                  //TODO:fallback to xhr if jqquery is not present
                    var that =this;
                   $.ajax({
                       url:this.sendData.url,
@@ -86,32 +107,32 @@ module consoleLogger{
                 //console is present show them the logs
                var message:string;
                 if(mes.messageType)
-                    message= 'Type:'+mes.messageType +'\n\nMessage:' + mes.message +'\n\nStack:' + mes.stack  + '\n\nEvent Time:' + mes.eventDT;
+                    message= 'Type:'+logType[mes.messageType] +'\n\nMessage:' + mes.message +'\n\nStack:' + mes.stack  + '\n\nEvent Time:' + mes.eventDT;
                 else
                     message=mes.message;
 
-                switch (mes.messageType.toLowerCase()){
+                switch (mes.messageType){
 
-                    case 'warn': console.warn(message);
+                    case logType.warn: console.warn(message);
                         break;
-                    case 'fatal':
-                    case 'error':console.error(message);
+                    case logType.fatal:
+                    case logType.error:console.error(message);
                         break;
-                    case 'info':console.info(message);
+                    case  logType.info:console.info(message);
                         break;
-                    case 'debug':
-                    case 'log':console.log(message);
+                    case logType.debug:
+                    case logType.log:console.log(message);
                         break;
                 }
             }
 
         }
 
-        public messageManager(message:string){
+        public messageManager(message:string) {
             //its basically sysout for user
             var msg = new logWrapperClass();
             msg.message=message;
-            msg.messageType='log';
+            msg.messageType=logType.log;
             this.showLog(msg);
         }
         //end private functions
@@ -120,33 +141,24 @@ module consoleLogger{
         error =(message:any) =>{
 
             //in error push to history ,show log and send to server
-            var logWarpperObj:logWrapperClass =this.messageFormatting(message);
-            logWarpperObj.messageType='ERROR';
-            this.performCommonJob(logWarpperObj);
-            this.sendDataToService(logWarpperObj);
+            this.sendDataToService(this.performCommonJob(message,logType.error))
         }
 
         fatal =(message:any) =>{
-            var logWarpperObj:logWrapperClass =this.messageFormatting(message);
-            logWarpperObj.messageType='FATAL';
-            this.performCommonJob(logWarpperObj);
-            this.sendDataToService(logWarpperObj);
+
+            this.sendDataToService(this.performCommonJob(message,logType.fatal))
         }
 
         debug =(message:any) =>{
-            var logWarpperObj:logWrapperClass =this.messageFormatting(message);
-            logWarpperObj.messageType='DEBUG';
-            this.performCommonJob(logWarpperObj);
+
             if(this.sendData && this.sendData.toSend ==2) //2 means to send all
-                this.sendDataToService(logWarpperObj);
+                this.sendDataToService(this.performCommonJob(message,logType.debug))
         }
 
         warn =(message:any)=>{
-            var logWarpperObj:logWrapperClass =this.messageFormatting(message);
-            logWarpperObj.messageType='WARN';
-            this.performCommonJob(logWarpperObj);
+
             if(this.sendData && this.sendData.toSend ==2) //2 means to send all
-                this.sendDataToService(logWarpperObj);
+                this.sendDataToService(this.performCommonJob(message,logType.warn))
         }
 
 

@@ -8,6 +8,16 @@
 /// <reference path="interface.ts"/>
 var consoleLogger;
 (function (consoleLogger) {
+    (function (logType) {
+        logType[logType["warn"] = 0] = "warn";
+        logType[logType["fatal"] = 1] = "fatal";
+        logType[logType["error"] = 2] = "error";
+        logType[logType["debug"] = 3] = "debug";
+        logType[logType["log"] = 4] = "log";
+        logType[logType["info"] = 5] = "info";
+    })(consoleLogger.logType || (consoleLogger.logType = {}));
+    var logType = consoleLogger.logType;
+
     var logWrapperClass = (function () {
         function logWrapperClass() {
             this.browserDetails = window.navigator.userAgent;
@@ -21,6 +31,7 @@ var consoleLogger;
             //default will to send whole data
             this.toSend = 1;
             this.headers = "application/json; charset=utf-8";
+            this.transport = ['jquery', 'xhr'];
         }
         return sendDataSettings;
     })();
@@ -37,30 +48,18 @@ var consoleLogger;
             //public functions
             this.error = function (message) {
                 //in error push to history ,show log and send to server
-                var logWarpperObj = _this.messageFormatting(message);
-                logWarpperObj.messageType = 'ERROR';
-                _this.performCommonJob(logWarpperObj);
-                _this.sendDataToService(logWarpperObj);
+                _this.sendDataToService(_this.performCommonJob(message, 2 /* error */));
             };
             this.fatal = function (message) {
-                var logWarpperObj = _this.messageFormatting(message);
-                logWarpperObj.messageType = 'FATAL';
-                _this.performCommonJob(logWarpperObj);
-                _this.sendDataToService(logWarpperObj);
+                _this.sendDataToService(_this.performCommonJob(message, 1 /* fatal */));
             };
             this.debug = function (message) {
-                var logWarpperObj = _this.messageFormatting(message);
-                logWarpperObj.messageType = 'DEBUG';
-                _this.performCommonJob(logWarpperObj);
                 if (_this.sendData && _this.sendData.toSend == 2)
-                    _this.sendDataToService(logWarpperObj);
+                    _this.sendDataToService(_this.performCommonJob(message, 3 /* debug */));
             };
             this.warn = function (message) {
-                var logWarpperObj = _this.messageFormatting(message);
-                logWarpperObj.messageType = 'WARN';
-                _this.performCommonJob(logWarpperObj);
                 if (_this.sendData && _this.sendData.toSend == 2)
-                    _this.sendDataToService(logWarpperObj);
+                    _this.sendDataToService(_this.performCommonJob(message, 0 /* warn */));
             };
             if (typeof ($) === 'function') {
                 this.logging = shouldLog;
@@ -80,10 +79,14 @@ var consoleLogger;
             }
         }
         //private functions
-        logger.prototype.performCommonJob = function (message) {
-            this.logHistory.push(message);
-            this.showLog(message);
+        logger.prototype.performCommonJob = function (message, logT) {
+            var logWarpperObj = this.messageFormatting(message);
+            logWarpperObj.messageType = logT;
+            this.logHistory.push(logWarpperObj);
+            this.showLog(logWarpperObj);
+            return logWarpperObj;
         };
+
         logger.prototype.messageFormatting = function (mes) {
             var logWarpperObj = new logWrapperClass();
             logWarpperObj.eventDT = new Date();
@@ -110,6 +113,7 @@ var consoleLogger;
 
         logger.prototype.sendDataToService = function (logData) {
             if (this.sendData) {
+                //TODO:fallback to xhr if jqquery is not present
                 var that = this;
                 $.ajax({
                     url: this.sendData.url,
@@ -128,23 +132,23 @@ var consoleLogger;
                 //console is present show them the logs
                 var message;
                 if (mes.messageType)
-                    message = 'Type:' + mes.messageType + '\n\nMessage:' + mes.message + '\n\nStack:' + mes.stack + '\n\nEvent Time:' + mes.eventDT;
+                    message = 'Type:' + logType[mes.messageType] + '\n\nMessage:' + mes.message + '\n\nStack:' + mes.stack + '\n\nEvent Time:' + mes.eventDT;
                 else
                     message = mes.message;
 
-                switch (mes.messageType.toLowerCase()) {
-                    case 'warn':
+                switch (mes.messageType) {
+                    case 0 /* warn */:
                         console.warn(message);
                         break;
-                    case 'fatal':
-                    case 'error':
+                    case 1 /* fatal */:
+                    case 2 /* error */:
                         console.error(message);
                         break;
-                    case 'info':
+                    case 5 /* info */:
                         console.info(message);
                         break;
-                    case 'debug':
-                    case 'log':
+                    case 3 /* debug */:
+                    case 4 /* log */:
                         console.log(message);
                         break;
                 }
@@ -155,7 +159,7 @@ var consoleLogger;
             //its basically sysout for user
             var msg = new logWrapperClass();
             msg.message = message;
-            msg.messageType = 'log';
+            msg.messageType = 4 /* log */;
             this.showLog(msg);
         };
 
