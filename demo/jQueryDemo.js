@@ -1,7 +1,7 @@
 /**
- * Created by prandutt on 7/30/2014.
+ * Created by prandutt on 8/7/2014.
  */
-    /// <reference path="../dist/logger.min/logger.js"/>
+/// <reference path="../dist/logger.min/logger.js"/>
 var loggerObj = new consoleLogger.logger(true,{url:'testUrlHere',toSend:2});//fatal,error :1 , all:2
 
 

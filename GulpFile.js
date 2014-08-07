@@ -29,7 +29,7 @@ gulp.task('usemin',['tsc'], function(){
 
 
 gulp.task('tsc', function(){
-    return gulp.src('src/logger.ts')
+    return gulp.src('src/core.ts')
         .pipe(typescript({
             tmpDir: '.tmp',
             sourcemap: true,

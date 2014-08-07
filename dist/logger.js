@@ -1,9 +1,23 @@
 /**
+* Created by prandutt on 8/6/2014.
+*/
+/**
 * Created by prandutt on 7/28/2014.
 */
 /// <reference path="../dependencies/jquery.d.ts"/>
+/// <reference path="interface.ts"/>
 var consoleLogger;
 (function (consoleLogger) {
+    (function (logType) {
+        logType[logType["warn"] = 1] = "warn";
+        logType[logType["fatal"] = 2] = "fatal";
+        logType[logType["error"] = 3] = "error";
+        logType[logType["debug"] = 4] = "debug";
+        logType[logType["log"] = 5] = "log";
+        logType[logType["info"] = 6] = "info";
+    })(consoleLogger.logType || (consoleLogger.logType = {}));
+    var logType = consoleLogger.logType;
+
     var logWrapperClass = (function () {
         function logWrapperClass() {
             this.browserDetails = window.navigator.userAgent;
@@ -17,6 +31,9 @@ var consoleLogger;
             //default will to send whole data
             this.toSend = 1;
             this.headers = "application/json; charset=utf-8";
+            //public transport:Array<string>  = ['jquery','xhr'];// how you want to send data
+            //for angular it will have its own service to send
+            this.isFramework = false;
         }
         return sendDataSettings;
     })();
@@ -26,6 +43,7 @@ var consoleLogger;
         //end public functions
         function logger(shouldLog, sendDataOptions) {
             var _this = this;
+            this.isJQueryPresent = false;
             this.logging = true;
             this.sendData = new sendDataSettings();
             this.logHistory = [];
@@ -33,68 +51,76 @@ var consoleLogger;
             //public functions
             this.error = function (message) {
                 //in error push to history ,show log and send to server
-                var logWarpperObj = _this.messageFormatting(message);
-                logWarpperObj.messageType = 'ERROR';
-                _this.performCommonJob(logWarpperObj);
-                _this.sendDataToService(logWarpperObj);
+                var logData = _this.performCommonJob(message, 3 /* error */);
+                _this.sendDataToService(logData);
+                return logData;
             };
             this.fatal = function (message) {
-                var logWarpperObj = _this.messageFormatting(message);
-                logWarpperObj.messageType = 'FATAL';
-                _this.performCommonJob(logWarpperObj);
-                _this.sendDataToService(logWarpperObj);
+                var logData = _this.performCommonJob(message, 2 /* fatal */);
+                _this.sendDataToService(logData);
+                return logData;
             };
             this.debug = function (message) {
-                var logWarpperObj = _this.messageFormatting(message);
-                logWarpperObj.messageType = 'DEBUG';
-                _this.performCommonJob(logWarpperObj);
-                if (_this.sendData && _this.sendData.toSend == 2)
-                    _this.sendDataToService(logWarpperObj);
+                if (_this.sendData && _this.sendData.toSend == 2) {
+                    var logData = _this.performCommonJob(message, 4 /* debug */);
+                    _this.sendDataToService(logData);
+                    return logData;
+                }
             };
             this.warn = function (message) {
-                var logWarpperObj = _this.messageFormatting(message);
-                logWarpperObj.messageType = 'WARN';
-                _this.performCommonJob(logWarpperObj);
-                if (_this.sendData && _this.sendData.toSend == 2)
-                    _this.sendDataToService(logWarpperObj);
-            };
-            if (typeof ($) === 'function') {
-                this.logging = shouldLog;
-                if (sendDataOptions) {
-                    if (sendDataOptions.toSend)
-                        this.sendData.toSend = sendDataOptions.toSend;
-
-                    if (sendDataOptions.headers)
-                        this.sendData.headers = sendDataOptions.headers;
-
-                    if (sendDataOptions.url)
-                        this.sendData.url = sendDataOptions.url;
+                if (_this.sendData && _this.sendData.toSend == 2) {
+                    var logData = _this.performCommonJob(message, 1 /* warn */);
+                    _this.sendDataToService(logData);
+                    return logData;
                 }
-            } else {
-                //jQuery is undefined show error to console
-                this.messageManager('jQuery is not present');
-            }
+            };
+            //checking jQuery presence
+            if (typeof ($) === 'function')
+                this.isJQueryPresent = true;
+
+            this.logging = shouldLog;
+            this.config(sendDataOptions);
         }
         //private functions
-        logger.prototype.performCommonJob = function (message) {
-            this.logHistory.push(message);
-            this.showLog(message);
+        logger.prototype.config = function (sendDataOptions) {
+            if (sendDataOptions) {
+                if (sendDataOptions.toSend)
+                    this.sendData.toSend = sendDataOptions.toSend;
+
+                if (sendDataOptions.headers)
+                    this.sendData.headers = sendDataOptions.headers;
+
+                if (sendDataOptions.url)
+                    this.sendData.url = sendDataOptions.url;
+
+                if (sendDataOptions.isFramework)
+                    this.sendData.isFramework = sendDataOptions.isFramework;
+            }
         };
+
+        logger.prototype.performCommonJob = function (message, logT) {
+            var logWarpperObj = this.messageFormatting(message);
+            logWarpperObj.messageType = logT;
+            this.logHistory.push(logWarpperObj);
+            this.showLog(logWarpperObj);
+            return logWarpperObj;
+        };
+
         logger.prototype.messageFormatting = function (mes) {
             var logWarpperObj = new logWrapperClass();
             logWarpperObj.eventDT = new Date();
             if (typeof (mes) === 'object') {
                 if (mes.message)
-                    logWarpperObj.message = $ ? $.trim(mes.message) : mes.message;
+                    logWarpperObj.message = this.isJQueryPresent ? $.trim(mes.message) : mes.message;
                 else
                     logWarpperObj.message = 'NA';
 
                 if (mes.stack)
-                    logWarpperObj.stack = $ ? $.trim(mes.stack) : mes.stack;
+                    logWarpperObj.stack = this.isJQueryPresent ? $.trim(mes.stack) : mes.stack;
                 else
                     logWarpperObj.stack = 'NA';
             } else if (typeof (mes) === 'string') {
-                logWarpperObj.message = $ ? $.trim(mes) : mes;
+                logWarpperObj.message = this.isJQueryPresent ? $.trim(mes) : mes;
                 logWarpperObj.stack = 'NA';
             } else {
                 //no supported format
@@ -104,28 +130,62 @@ var consoleLogger;
             return logWarpperObj;
         };
 
+        logger.prototype.getConfig = function () {
+            return this.sendData;
+        };
         logger.prototype.sendDataToService = function (logData) {
-            if (this.sendData) {
+            if (this.sendData && !this.sendData.isFramework) {
+                //TODO:fallback to xhr if jquery is not present
                 var that = this;
-                $.ajax({
-                    url: this.sendData.url,
-                    method: 'POST',
-                    contentType: this.sendData.headers,
-                    data: JSON.stringify(logData)
-                }).done(function (d) {
-                    //sending successful
-                }).fail(function (error) {
-                    that.messageManager('AJAX error:' + error.statusText);
-                });
+                if (this.isJQueryPresent) {
+                    $.ajax({
+                        url: this.sendData.url,
+                        method: 'POST',
+                        contentType: this.sendData.headers,
+                        data: JSON.stringify(logData)
+                    }).done(function (d) {
+                        //sending successful
+                    }).fail(function (error) {
+                        that.messageManager('AJAX error:' + error.statusText);
+                    });
+                } else {
+                    //go for normal xhr
+                    var xmlhttp = new XMLHttpRequest();
+                    xmlhttp.open("POST", this.sendData.url);
+                    xmlhttp.setRequestHeader("Content-Type", this.sendData.headers);
+                    xmlhttp.send(JSON.stringify(logData));
+                    xmlhttp.onreadystatechange = function () {
+                        if ((this.readyState != 4 || this.status != 200))
+                            that.messageManager('AJAX error:' + this.statusText);
+                    };
+                }
             }
         };
         logger.prototype.showLog = function (mes) {
             if (console && this.logging && mes) {
                 //console is present show them the logs
-                if (mes.messageType)
-                    console.log('Type:' + mes.messageType + '\n\nMessage:' + mes.message + '\n\nStack:' + mes.stack + '\n\nEvent Time:' + mes.eventDT);
+                var message;
+                if (mes.messageType && mes.messageType !== 5 /* log */)
+                    message = 'Type:' + logType[mes.messageType] + '\n\nMessage:' + mes.message + '\n\nStack:' + mes.stack || 'NA' + '\n\nEvent Time:' + mes.eventDT;
                 else
-                    console.log(mes.message);
+                    message = mes.message;
+
+                switch (mes.messageType) {
+                    case 1 /* warn */:
+                        console.warn(message);
+                        break;
+                    case 2 /* fatal */:
+                    case 3 /* error */:
+                        console.error(message);
+                        break;
+                    case 6 /* info */:
+                        console.info(message);
+                        break;
+                    case 4 /* debug */:
+                    case 5 /* log */:
+                        console.log(message);
+                        break;
+                }
             }
         };
 
@@ -133,6 +193,7 @@ var consoleLogger;
             //its basically sysout for user
             var msg = new logWrapperClass();
             msg.message = message;
+            msg.messageType = 5 /* log */;
             this.showLog(msg);
         };
 
@@ -150,4 +211,102 @@ var consoleLogger;
     })();
     consoleLogger.logger = logger;
 })(consoleLogger || (consoleLogger = {}));
+/**
+* Created by prandutt on 8/6/2014.
+*/
+/// <reference path="../dependencies/angular.d.ts"/>
+/// <reference path="interface.ts"/>
+var consoleLogger;
+(function (consoleLogger) {
+    consoleLogger.app = function () {
+        return angular.module('consoleLogger', []).service(consoleLogger);
+    }();
+    var loggerService = (function () {
+        function loggerService($http) {
+            this.$http = $http;
+            this.isConfigDone = false;
+        }
+        loggerService.prototype.config = function (shouldLog, sendDataOptions) {
+            this.isConfigDone = true;
+            sendDataOptions.isFramework = true;
+            this.loggerVar = new consoleLogger.logger(shouldLog, sendDataOptions);
+        };
+
+        loggerService.prototype.error = function (message) {
+            if (this.isConfigDone) {
+                //config done
+                this.sendDataToService(this.loggerVar.error(message));
+            } else {
+                //initial config not done
+                this.configNotDone();
+            }
+        };
+
+        loggerService.prototype.debug = function (message) {
+            if (this.isConfigDone) {
+                //config done
+                this.sendDataToService(this.loggerVar.debug(message));
+            } else {
+                //initial config not done
+                this.configNotDone();
+            }
+        };
+
+        loggerService.prototype.fatal = function (message) {
+            if (this.isConfigDone) {
+                //config done
+                this.sendDataToService(this.loggerVar.fatal(message));
+            } else {
+                //initial config not done
+                this.configNotDone();
+            }
+        };
+
+        loggerService.prototype.warn = function (message) {
+            if (this.isConfigDone) {
+                //config done
+                this.sendDataToService(this.loggerVar.warn(message));
+            } else {
+                //initial config not done
+                this.configNotDone();
+            }
+        };
+
+        loggerService.prototype.history = function () {
+            if (this.isConfigDone) {
+                //config done
+                this.loggerVar.history();
+            } else {
+                //initial config not done
+                this.configNotDone();
+            }
+        };
+        loggerService.prototype.sendDataToService = function (logData) {
+            this.$http({
+                url: this.loggerVar.getConfig().url,
+                method: 'POST',
+                data: JSON.stringify(logData),
+                headers: this.loggerVar.getConfig().headers
+            }).then(function () {
+                //success
+            }, function () {
+                //error
+            });
+        };
+        loggerService.prototype.configNotDone = function () {
+            if (!this.loggerVar)
+                this.loggerVar = new consoleLogger.logger(true);
+            this.loggerVar.messageManager('Initial config not done, try doing consoleLogger.config ');
+        };
+        loggerService.$inject = ['$http'];
+        return loggerService;
+    })();
+    consoleLogger.loggerService = loggerService;
+})(consoleLogger || (consoleLogger = {}));
+/**
+* Created by prandutt on 8/6/2014.
+*/
+//files to compile
+/// <reference path="logger.ts"/>
+/// <reference path="angularLogger.ts"/>
 //# sourceMappingURL=logger.js.map
