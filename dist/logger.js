@@ -31,7 +31,7 @@ var consoleLogger;
             //default will to send whole data
             this.toSend = 1;
             this.headers = "application/json; charset=utf-8";
-            this.transport = ['jquery', 'xhr'];
+            //public transport:Array<string>  = ['jquery','xhr'];// how you want to send data
             //for angular it will have its own service to send
             this.isFramework = false;
         }
@@ -43,6 +43,7 @@ var consoleLogger;
         //end public functions
         function logger(shouldLog, sendDataOptions) {
             var _this = this;
+            this.isJQueryPresent = false;
             this.logging = true;
             this.sendData = new sendDataSettings();
             this.logHistory = [];
@@ -73,13 +74,12 @@ var consoleLogger;
                     return logData;
                 }
             };
-            if (typeof ($) === 'function') {
-                this.logging = shouldLog;
-                this.config(sendDataOptions);
-            } else {
-                //jQuery is undefined show error to console
-                this.messageManager('jQuery is not present');
-            }
+            //checking jQuery presence
+            if (typeof ($) === 'function')
+                this.isJQueryPresent = true;
+
+            this.logging = shouldLog;
+            this.config(sendDataOptions);
         }
         //private functions
         logger.prototype.config = function (sendDataOptions) {
@@ -111,16 +111,16 @@ var consoleLogger;
             logWarpperObj.eventDT = new Date();
             if (typeof (mes) === 'object') {
                 if (mes.message)
-                    logWarpperObj.message = $ ? $.trim(mes.message) : mes.message;
+                    logWarpperObj.message = this.isJQueryPresent ? $.trim(mes.message) : mes.message;
                 else
                     logWarpperObj.message = 'NA';
 
                 if (mes.stack)
-                    logWarpperObj.stack = $ ? $.trim(mes.stack) : mes.stack;
+                    logWarpperObj.stack = this.isJQueryPresent ? $.trim(mes.stack) : mes.stack;
                 else
                     logWarpperObj.stack = 'NA';
             } else if (typeof (mes) === 'string') {
-                logWarpperObj.message = $ ? $.trim(mes) : mes;
+                logWarpperObj.message = this.isJQueryPresent ? $.trim(mes) : mes;
                 logWarpperObj.stack = 'NA';
             } else {
                 //no supported format
@@ -135,18 +135,30 @@ var consoleLogger;
         };
         logger.prototype.sendDataToService = function (logData) {
             if (this.sendData && !this.sendData.isFramework) {
-                //TODO:fallback to xhr if jqquery is not present
+                //TODO:fallback to xhr if jquery is not present
                 var that = this;
-                $.ajax({
-                    url: this.sendData.url,
-                    method: 'POST',
-                    contentType: this.sendData.headers,
-                    data: JSON.stringify(logData)
-                }).done(function (d) {
-                    //sending successful
-                }).fail(function (error) {
-                    that.messageManager('AJAX error:' + error.statusText);
-                });
+                if (this.isJQueryPresent) {
+                    $.ajax({
+                        url: this.sendData.url,
+                        method: 'POST',
+                        contentType: this.sendData.headers,
+                        data: JSON.stringify(logData)
+                    }).done(function (d) {
+                        //sending successful
+                    }).fail(function (error) {
+                        that.messageManager('AJAX error:' + error.statusText);
+                    });
+                } else {
+                    //go for normal xhr
+                    var xmlhttp = new XMLHttpRequest();
+                    xmlhttp.open("POST", this.sendData.url);
+                    xmlhttp.setRequestHeader("Content-Type", this.sendData.headers);
+                    xmlhttp.send(JSON.stringify(logData));
+                    xmlhttp.onreadystatechange = function () {
+                        if ((this.readyState != 4 || this.status != 200))
+                            that.messageManager('AJAX error:' + this.statusText);
+                    };
+                }
             }
         };
         logger.prototype.showLog = function (mes) {

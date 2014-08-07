@@ -28,7 +28,7 @@ module consoleLogger{
         //default will to send whole data
         public toSend:number =1; //fatal,error :1 , all:2
         public headers:string ="application/json; charset=utf-8";
-        public transport:Array<string>  = ['jquery','xhr'];// how you want to send data
+        //public transport:Array<string>  = ['jquery','xhr'];// how you want to send data
         //for angular it will have its own service to send
         public isFramework:boolean = false;
 
@@ -36,7 +36,7 @@ module consoleLogger{
 
 
     export class logger implements ILogger{
-
+        private isJQueryPresent:boolean =false;
         private logging:boolean =true;
         private sendData:sendDataSettings =new sendDataSettings();
 
@@ -76,18 +76,18 @@ module consoleLogger{
             logWarpperObj.eventDT =new Date();
             if(typeof(mes) === 'object' ) {
                 if(mes.message)
-                    logWarpperObj.message = $ ? $.trim(mes.message) :mes.message;
+                    logWarpperObj.message = this.isJQueryPresent ? $.trim(mes.message) :mes.message;
                 else
                     logWarpperObj.message='NA';
 
                 if(mes.stack)
-                    logWarpperObj.stack = $ ? $.trim(mes.stack): mes.stack;
+                    logWarpperObj.stack = this.isJQueryPresent ? $.trim(mes.stack): mes.stack;
                 else
                     logWarpperObj.stack='NA';
             }
             else if(typeof(mes) ==='string'){
 
-                logWarpperObj.message = $ ?$.trim(mes) :mes;
+                logWarpperObj.message = this.isJQueryPresent ?$.trim(mes) :mes;
                 logWarpperObj.stack ='NA';
 
             }
@@ -106,18 +106,32 @@ module consoleLogger{
         public sendDataToService(logData:logWrapperClass){
                if(this.sendData && !this.sendData.isFramework)
                {
-                  //TODO:fallback to xhr if jqquery is not present
-                   var that =this;
-                  $.ajax({
-                      url:this.sendData.url,
-                      method:'POST',
-                      contentType:this.sendData.headers,
-                      data:JSON.stringify(logData)
-                  }).done(function(d){
-                      //sending successful
-                  }).fail(function(error){
-                     that.messageManager('AJAX error:'+ error.statusText)
-                  })
+                  //TODO:fallback to xhr if jquery is not present
+                   var that = this;
+                   if(this.isJQueryPresent) {
+
+                       $.ajax({
+                           url: this.sendData.url,
+                           method: 'POST',
+                           contentType: this.sendData.headers,
+                           data: JSON.stringify(logData)
+                       }).done(function (d) {
+                           //sending successful
+                       }).fail(function (error) {
+                           that.messageManager('AJAX error:' + error.statusText)
+                       });
+                   }
+                   else{
+                       //go for normal xhr
+                       var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance
+                       xmlhttp.open("POST", this.sendData.url);
+                       xmlhttp.setRequestHeader("Content-Type", this.sendData.headers);
+                       xmlhttp.send(JSON.stringify(logData));
+                       xmlhttp.onreadystatechange = function(){
+                           if ((this.readyState !=4 || this.status !=200))
+                               that.messageManager('AJAX error:' + this.statusText)
+                       }
+                   }
                }
           }
         private showLog(mes:logWrapperClass){
@@ -210,21 +224,16 @@ module consoleLogger{
         //end public functions
 
         constructor(shouldLog,sendDataOptions?:sendDataSettings){
-            if(typeof ($) === 'function') {
-                this.logging = shouldLog;
-                this.config(sendDataOptions);
-            }
-            else{
-                //jQuery is undefined show error to console
-                this.messageManager('jQuery is not present');
-            }
+
+            //checking jQuery presence
+            if(typeof ($) === 'function')
+                this.isJQueryPresent=true;
 
 
+            this.logging = shouldLog;
+            this.config(sendDataOptions);
 
-
-
-
-        }
+             }
 
     }
 
