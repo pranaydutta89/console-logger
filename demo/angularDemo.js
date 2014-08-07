@@ -33,6 +33,12 @@ app.controller('demoController',function($scope,loggerService){
     }
 
 
+
+});
+
+
+app.controller('demoController1',function($scope,loggerService){
+
     loggerService.fatal('this is a fatal log');
 
     try{
@@ -49,5 +55,8 @@ app.controller('demoController',function($scope,loggerService){
     }catch(e){
         loggerService.warn(e)
     }
-
 });
+
+app.controller('demoController2', function($scope,loggerService){
+    loggerService.history();
+})

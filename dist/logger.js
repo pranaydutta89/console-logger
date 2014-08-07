@@ -9,12 +9,12 @@
 var consoleLogger;
 (function (consoleLogger) {
     (function (logType) {
-        logType[logType["warn"] = 0] = "warn";
-        logType[logType["fatal"] = 1] = "fatal";
-        logType[logType["error"] = 2] = "error";
-        logType[logType["debug"] = 3] = "debug";
-        logType[logType["log"] = 4] = "log";
-        logType[logType["info"] = 5] = "info";
+        logType[logType["warn"] = 1] = "warn";
+        logType[logType["fatal"] = 2] = "fatal";
+        logType[logType["error"] = 3] = "error";
+        logType[logType["debug"] = 4] = "debug";
+        logType[logType["log"] = 5] = "log";
+        logType[logType["info"] = 6] = "info";
     })(consoleLogger.logType || (consoleLogger.logType = {}));
     var logType = consoleLogger.logType;
 
@@ -51,25 +51,25 @@ var consoleLogger;
             //public functions
             this.error = function (message) {
                 //in error push to history ,show log and send to server
-                var logData = _this.performCommonJob(message, 2 /* error */);
+                var logData = _this.performCommonJob(message, 3 /* error */);
                 _this.sendDataToService(logData);
                 return logData;
             };
             this.fatal = function (message) {
-                var logData = _this.performCommonJob(message, 1 /* fatal */);
+                var logData = _this.performCommonJob(message, 2 /* fatal */);
                 _this.sendDataToService(logData);
                 return logData;
             };
             this.debug = function (message) {
                 if (_this.sendData && _this.sendData.toSend == 2) {
-                    var logData = _this.performCommonJob(message, 3 /* debug */);
+                    var logData = _this.performCommonJob(message, 4 /* debug */);
                     _this.sendDataToService(logData);
                     return logData;
                 }
             };
             this.warn = function (message) {
                 if (_this.sendData && _this.sendData.toSend == 2) {
-                    var logData = _this.performCommonJob(message, 0 /* warn */);
+                    var logData = _this.performCommonJob(message, 1 /* warn */);
                     _this.sendDataToService(logData);
                     return logData;
                 }
@@ -165,24 +165,24 @@ var consoleLogger;
             if (console && this.logging && mes) {
                 //console is present show them the logs
                 var message;
-                if (mes.messageType)
-                    message = 'Type:' + logType[mes.messageType] + '\n\nMessage:' + mes.message + '\n\nStack:' + mes.stack + '\n\nEvent Time:' + mes.eventDT;
+                if (mes.messageType && mes.messageType !== 5 /* log */)
+                    message = 'Type:' + logType[mes.messageType] + '\n\nMessage:' + mes.message + '\n\nStack:' + mes.stack || 'NA' + '\n\nEvent Time:' + mes.eventDT;
                 else
                     message = mes.message;
 
                 switch (mes.messageType) {
-                    case 0 /* warn */:
+                    case 1 /* warn */:
                         console.warn(message);
                         break;
-                    case 1 /* fatal */:
-                    case 2 /* error */:
+                    case 2 /* fatal */:
+                    case 3 /* error */:
                         console.error(message);
                         break;
-                    case 5 /* info */:
+                    case 6 /* info */:
                         console.info(message);
                         break;
-                    case 3 /* debug */:
-                    case 4 /* log */:
+                    case 4 /* debug */:
+                    case 5 /* log */:
                         console.log(message);
                         break;
                 }
@@ -193,7 +193,7 @@ var consoleLogger;
             //its basically sysout for user
             var msg = new logWrapperClass();
             msg.message = message;
-            msg.messageType = 4 /* log */;
+            msg.messageType = 5 /* log */;
             this.showLog(msg);
         };
 
@@ -221,7 +221,6 @@ var consoleLogger;
     consoleLogger.app = function () {
         return angular.module('consoleLogger', []).service(consoleLogger);
     }();
-
     var loggerService = (function () {
         function loggerService($http) {
             this.$http = $http;

@@ -6,12 +6,13 @@
 
 
 module consoleLogger {
+
+
     export var app:ng.IModule = function () {
+
         return angular.module('consoleLogger', []).service(consoleLogger)
 
     }();
-
-
     export class loggerService implements ILogger{
          private loggerVar:consoleLogger.logger;
          private isConfigDone:boolean=false;

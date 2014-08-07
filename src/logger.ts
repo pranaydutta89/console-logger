@@ -6,7 +6,7 @@
 module consoleLogger{
 
    export enum logType{
-        warn,
+        warn =1,
         fatal,
         error ,
         debug,
@@ -139,8 +139,8 @@ module consoleLogger{
             {
                 //console is present show them the logs
                var message:string;
-                if(mes.messageType)
-                    message= 'Type:'+logType[mes.messageType] +'\n\nMessage:' + mes.message +'\n\nStack:' + mes.stack  + '\n\nEvent Time:' + mes.eventDT;
+                if(mes.messageType  && mes.messageType !== logType.log)
+                    message= 'Type:'+logType[mes.messageType] +'\n\nMessage:' + mes.message +'\n\nStack:' + mes.stack || 'NA'  + '\n\nEvent Time:' + mes.eventDT ;
                 else
                     message=mes.message;
 
