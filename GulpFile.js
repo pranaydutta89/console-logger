@@ -14,12 +14,7 @@ var foreach = require('gulp-foreach');
 
 gulp.task('usemin',['tsc'], function(){
     gulp.src('dist/logger.js') // path to your files
-        .pipe(usemin({
-           js: ['concat', uglify({
-                mangle:false,
-                compress:false
-            })]
-        }))
+        .pipe(uglify())
         .pipe(gulp.dest('dist/logger.min'));
 
 
