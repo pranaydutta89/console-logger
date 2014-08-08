@@ -16,11 +16,11 @@ module consoleLogger {
     export class loggerService implements ILogger{
          private loggerVar:consoleLogger.logger;
          private isConfigDone:boolean=false;
-         public config(shouldLog:boolean ,sendDataOptions?:consoleLogger.sendDataSettings) {
+         public config(shouldLog:boolean ,showAsHtml?:boolean,sendDataOptions?:consoleLogger.sendDataSettings) {
 
               this.isConfigDone=true;
               sendDataOptions.isFramework=true;
-              this.loggerVar = new consoleLogger.logger(shouldLog,sendDataOptions);
+              this.loggerVar = new consoleLogger.logger(shouldLog,showAsHtml,sendDataOptions);
          }
 
         public error(message:any){
@@ -86,7 +86,8 @@ module consoleLogger {
                 this.configNotDone();
             }
         }
-        public sendDataToService(logData:logWrapperClass){
+         public  sendDataToService(logData:logWrapperClass){
+             var that =this;
             this.$http({
                 url:this.loggerVar.getConfig().url,
                 method: 'POST',
@@ -94,8 +95,9 @@ module consoleLogger {
                 headers: this.loggerVar.getConfig().headers
             }).then(function(){
                 //success
-            },function(){
+            },function(d){
                 //error
+                that.loggerVar.messageManager('Ajax Error:' + d);
             });
         }
         private configNotDone(){

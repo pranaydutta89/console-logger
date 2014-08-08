@@ -3,8 +3,9 @@
  */
 /// <reference path="../dependencies/jquery.d.ts"/>
 /// <reference path="interface.ts"/>
+/// <reference path="utils.ts"/>
 module consoleLogger{
-
+    var  utils:consoleLogger.utils.utilities = new consoleLogger.utils.utilities();
    export enum logType{
         warn =1,
         fatal,
@@ -36,16 +37,19 @@ module consoleLogger{
 
 
     export class logger implements ILogger{
-        private isJQueryPresent:boolean =false;
+
         private logging:boolean =true;
-        private sendData:sendDataSettings =new sendDataSettings();
+        private showAsHtml:boolean=false;
+        private sendData:sendDataSettings;
 
         private logHistory:Array<logWrapperClass> =[];
+
+
         //private functions
 
         private config(sendDataOptions:sendDataSettings){
             if (sendDataOptions) {
-
+                this.sendData =new sendDataSettings()
                 if(sendDataOptions.toSend)
                     this.sendData.toSend = sendDataOptions.toSend;
 
@@ -76,18 +80,18 @@ module consoleLogger{
             logWarpperObj.eventDT =new Date();
             if(typeof(mes) === 'object' ) {
                 if(mes.message)
-                    logWarpperObj.message = this.isJQueryPresent ? $.trim(mes.message) :mes.message;
+                    logWarpperObj.message =utils.trim(mes.message);
                 else
                     logWarpperObj.message='NA';
 
                 if(mes.stack)
-                    logWarpperObj.stack = this.isJQueryPresent ? $.trim(mes.stack): mes.stack;
+                    logWarpperObj.stack = utils.trim(mes.stack);
                 else
                     logWarpperObj.stack='NA';
             }
             else if(typeof(mes) ==='string'){
 
-                logWarpperObj.message = this.isJQueryPresent ?$.trim(mes) :mes;
+                logWarpperObj.message = utils.trim(mes);
                 logWarpperObj.stack ='NA';
 
             }
@@ -100,45 +104,11 @@ module consoleLogger{
             return logWarpperObj;
         }
 
-        public getConfig():sendDataSettings{
-            return this.sendData;
-        }
-        public sendDataToService(logData:logWrapperClass){
-               if(this.sendData && !this.sendData.isFramework)
-               {
-                  //TODO:fallback to xhr if jquery is not present
-                   var that = this;
-                   if(this.isJQueryPresent) {
-
-                       $.ajax({
-                           url: this.sendData.url,
-                           method: 'POST',
-                           contentType: this.sendData.headers,
-                           data: JSON.stringify(logData)
-                       }).done(function (d) {
-                           //sending successful
-                       }).fail(function (error) {
-                           that.messageManager('AJAX error:' + error.statusText)
-                       });
-                   }
-                   else{
-                       //go for normal xhr
-                       var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance
-                       xmlhttp.open("POST", this.sendData.url);
-                       xmlhttp.setRequestHeader("Content-Type", this.sendData.headers);
-                       xmlhttp.send(JSON.stringify(logData));
-                       xmlhttp.onreadystatechange = function(){
-                           if ((this.readyState !=4 || this.status !=200))
-                               that.messageManager('AJAX error:' + this.statusText)
-                       }
-                   }
-               }
-          }
         private showLog(mes:logWrapperClass){
             if(console && this.logging && mes)
             {
                 //console is present show them the logs
-               var message:string;
+                var message:string;
                 if(mes.messageType  && mes.messageType !== logType.log)
                     message= 'Type:'+logType[mes.messageType] +'\n\nMessage:' + mes.message +'\n\nStack:' + mes.stack || 'NA'  + '\n\nEvent Time:' + mes.eventDT ;
                 else
@@ -157,9 +127,55 @@ module consoleLogger{
                     case logType.log:console.log(message);
                         break;
                 }
+                this.showLogAsHtml(mes);
             }
 
         }
+
+        private showLogAsHtml(mes:logWrapperClass){
+
+            //don't use any lib to manipulate the dom
+            //since we want to create non dependent lib
+            if(this.showAsHtml) {
+                var msg:string;
+                var root = document.getElementsByTagName('body')[0];
+                var parentDiv = document.createElement('div');
+                if (mes.messageType && mes.messageType !== logType.log)
+                    msg = '<div style="padding: 2%;text-align: center;font-family: "Bookman", Georgia, "Times New Roman", serif"><strong>Type:</strong>' + logType[mes.messageType] + '<br/><strong>Message:</strong>' + mes.message + '<br/><strong>Stack:</strong>' + mes.stack + '<br/><strong>Event Time:</strong>' + mes.eventDT + '<br/></div><br/>'
+                else
+                    msg = '<div style="padding: 2%;text-align: center;font-family: "Bookman", Georgia, "Times New Roman", serif"><strong>Type:</strong>Log<br/><strong>Message:</strong>' + mes.message + '</div><br/>';
+
+                parentDiv.innerHTML = msg;
+                root.appendChild(parentDiv);
+            }
+        }
+
+        //end private functions
+
+
+        //public functions
+        public getConfig():sendDataSettings{
+            return this.sendData;
+        }
+
+        public sendDataToService(logData:logWrapperClass){
+               if(this.sendData && !this.sendData.isFramework)
+               {
+                  //TODO:fallback to xhr if jquery is not present
+
+                       var that =this;
+                       var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance
+                       xmlhttp.open("POST", this.sendData.url);
+                       xmlhttp.setRequestHeader("Content-Type", this.sendData.headers);
+                       xmlhttp.send(JSON.stringify(logData));
+                       xmlhttp.onreadystatechange = function(){
+                           if ((this.readyState !=4 || this.status !=200))
+                               that.messageManager('AJAX error:' + this.statusText)
+
+                   }
+               }
+          }
+
 
         public messageManager(message:string) {
             //its basically sysout for user
@@ -168,8 +184,20 @@ module consoleLogger{
             msg.messageType=logType.log;
             this.showLog(msg);
         }
-        //end private functions
-        //public functions
+
+        public history(){
+
+            if(this.logHistory.length ==0) {
+                this.messageManager('No activity yet!!');
+            }
+            else
+            {
+                for(var idx in this.logHistory){
+                    this.messageManager('Sr No:' + (parseInt(idx,10)+1).toString());
+                    this.showLog(this.logHistory[idx]);
+                }
+            }
+        }
 
         error =(message:any):logWrapperClass =>{
 
@@ -187,53 +215,37 @@ module consoleLogger{
 
         debug =(message:any):logWrapperClass => {
 
+            var logData =this.performCommonJob(message,logType.debug);
             if (this.sendData && this.sendData.toSend == 2) //2 means to send all
-            {
-                var logData =this.performCommonJob(message,logType.debug);
-                this.sendDataToService(logData)
-                return logData;
-            }
+              this.sendDataToService(logData)
 
+            return logData;
         }
 
         warn =(message:any):logWrapperClass=>{
 
+            var logData =this.performCommonJob(message,logType.warn);
             if(this.sendData && this.sendData.toSend ==2) //2 means to send all
-            {
-                var logData =this.performCommonJob(message,logType.warn);
-                this.sendDataToService(logData)
-                return logData;
-            }
+               this.sendDataToService(logData)
+
+            return logData;
         }
 
 
-        history(){
 
-            if(this.logHistory.length ==0) {
-                this.messageManager('No activity yet!!');
-            }
-            else
-            {
-                for(var idx in this.logHistory){
-                    this.messageManager('Sr No:' + (parseInt(idx,10)+1).toString());
-                    this.showLog(this.logHistory[idx]);
-                }
-            }
-        }
 
         //end public functions
 
-        constructor(shouldLog,sendDataOptions?:sendDataSettings){
 
+        constructor(shouldLog:boolean,showAsHtml?:boolean,sendDataOptions?:sendDataSettings){
             //checking jQuery presence
-            if(typeof ($) === 'function')
-                this.isJQueryPresent=true;
 
-
+            if(showAsHtml)
+            this.showAsHtml =showAsHtml;
             this.logging = shouldLog;
             this.config(sendDataOptions);
 
-             }
+        }
 
     }
 

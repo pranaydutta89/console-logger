@@ -1,13 +1,37 @@
 /**
 * Created by prandutt on 8/6/2014.
 */
+var consoleLogger;
+(function (consoleLogger) {
+    /**
+    * Created by prandutt on 8/8/2014.
+    */
+    (function (utils) {
+        var utilities = (function () {
+            function utilities() {
+            }
+            utilities.prototype.trim = function (message) {
+                try  {
+                    return message.toString().trim();
+                } catch (e) {
+                    return message.toString().replace(/^\s+|\s+$/gm, '');
+                }
+            };
+            return utilities;
+        })();
+        utils.utilities = utilities;
+    })(consoleLogger.utils || (consoleLogger.utils = {}));
+    var utils = consoleLogger.utils;
+})(consoleLogger || (consoleLogger = {}));
 /**
 * Created by prandutt on 7/28/2014.
 */
 /// <reference path="../dependencies/jquery.d.ts"/>
 /// <reference path="interface.ts"/>
+/// <reference path="utils.ts"/>
 var consoleLogger;
 (function (consoleLogger) {
+    var utils = new consoleLogger.utils.utilities();
     (function (logType) {
         logType[logType["warn"] = 1] = "warn";
         logType[logType["fatal"] = 2] = "fatal";
@@ -41,14 +65,11 @@ var consoleLogger;
 
     var logger = (function () {
         //end public functions
-        function logger(shouldLog, sendDataOptions) {
+        function logger(shouldLog, showAsHtml, sendDataOptions) {
             var _this = this;
-            this.isJQueryPresent = false;
             this.logging = true;
-            this.sendData = new sendDataSettings();
+            this.showAsHtml = false;
             this.logHistory = [];
-            //end private functions
-            //public functions
             this.error = function (message) {
                 //in error push to history ,show log and send to server
                 var logData = _this.performCommonJob(message, 3 /* error */);
@@ -61,29 +82,29 @@ var consoleLogger;
                 return logData;
             };
             this.debug = function (message) {
-                if (_this.sendData && _this.sendData.toSend == 2) {
-                    var logData = _this.performCommonJob(message, 4 /* debug */);
+                var logData = _this.performCommonJob(message, 4 /* debug */);
+                if (_this.sendData && _this.sendData.toSend == 2)
                     _this.sendDataToService(logData);
-                    return logData;
-                }
+
+                return logData;
             };
             this.warn = function (message) {
-                if (_this.sendData && _this.sendData.toSend == 2) {
-                    var logData = _this.performCommonJob(message, 1 /* warn */);
+                var logData = _this.performCommonJob(message, 1 /* warn */);
+                if (_this.sendData && _this.sendData.toSend == 2)
                     _this.sendDataToService(logData);
-                    return logData;
-                }
+
+                return logData;
             };
             //checking jQuery presence
-            if (typeof ($) === 'function')
-                this.isJQueryPresent = true;
-
+            if (showAsHtml)
+                this.showAsHtml = showAsHtml;
             this.logging = shouldLog;
             this.config(sendDataOptions);
         }
         //private functions
         logger.prototype.config = function (sendDataOptions) {
             if (sendDataOptions) {
+                this.sendData = new sendDataSettings();
                 if (sendDataOptions.toSend)
                     this.sendData.toSend = sendDataOptions.toSend;
 
@@ -111,16 +132,16 @@ var consoleLogger;
             logWarpperObj.eventDT = new Date();
             if (typeof (mes) === 'object') {
                 if (mes.message)
-                    logWarpperObj.message = this.isJQueryPresent ? $.trim(mes.message) : mes.message;
+                    logWarpperObj.message = utils.trim(mes.message);
                 else
                     logWarpperObj.message = 'NA';
 
                 if (mes.stack)
-                    logWarpperObj.stack = this.isJQueryPresent ? $.trim(mes.stack) : mes.stack;
+                    logWarpperObj.stack = utils.trim(mes.stack);
                 else
                     logWarpperObj.stack = 'NA';
             } else if (typeof (mes) === 'string') {
-                logWarpperObj.message = this.isJQueryPresent ? $.trim(mes) : mes;
+                logWarpperObj.message = utils.trim(mes);
                 logWarpperObj.stack = 'NA';
             } else {
                 //no supported format
@@ -130,37 +151,6 @@ var consoleLogger;
             return logWarpperObj;
         };
 
-        logger.prototype.getConfig = function () {
-            return this.sendData;
-        };
-        logger.prototype.sendDataToService = function (logData) {
-            if (this.sendData && !this.sendData.isFramework) {
-                //TODO:fallback to xhr if jquery is not present
-                var that = this;
-                if (this.isJQueryPresent) {
-                    $.ajax({
-                        url: this.sendData.url,
-                        method: 'POST',
-                        contentType: this.sendData.headers,
-                        data: JSON.stringify(logData)
-                    }).done(function (d) {
-                        //sending successful
-                    }).fail(function (error) {
-                        that.messageManager('AJAX error:' + error.statusText);
-                    });
-                } else {
-                    //go for normal xhr
-                    var xmlhttp = new XMLHttpRequest();
-                    xmlhttp.open("POST", this.sendData.url);
-                    xmlhttp.setRequestHeader("Content-Type", this.sendData.headers);
-                    xmlhttp.send(JSON.stringify(logData));
-                    xmlhttp.onreadystatechange = function () {
-                        if ((this.readyState != 4 || this.status != 200))
-                            that.messageManager('AJAX error:' + this.statusText);
-                    };
-                }
-            }
-        };
         logger.prototype.showLog = function (mes) {
             if (console && this.logging && mes) {
                 //console is present show them the logs
@@ -186,6 +176,45 @@ var consoleLogger;
                         console.log(message);
                         break;
                 }
+                this.showLogAsHtml(mes);
+            }
+        };
+
+        logger.prototype.showLogAsHtml = function (mes) {
+            //don't use any lib to manipulate the dom
+            //since we want to create non dependent lib
+            if (this.showAsHtml) {
+                var msg;
+                var root = document.getElementsByTagName('body')[0];
+                var parentDiv = document.createElement('div');
+                if (mes.messageType && mes.messageType !== 5 /* log */)
+                    msg = '<div style="padding: 2%;text-align: center;font-family: "Bookman", Georgia, "Times New Roman", serif"><strong>Type:</strong>' + logType[mes.messageType] + '<br/><strong>Message:</strong>' + mes.message + '<br/><strong>Stack:</strong>' + mes.stack + '<br/><strong>Event Time:</strong>' + mes.eventDT + '<br/></div><br/>';
+                else
+                    msg = '<div style="padding: 2%;text-align: center;font-family: "Bookman", Georgia, "Times New Roman", serif"><strong>Type:</strong>Log<br/><strong>Message:</strong>' + mes.message + '</div><br/>';
+
+                parentDiv.innerHTML = msg;
+                root.appendChild(parentDiv);
+            }
+        };
+
+        //end private functions
+        //public functions
+        logger.prototype.getConfig = function () {
+            return this.sendData;
+        };
+
+        logger.prototype.sendDataToService = function (logData) {
+            if (this.sendData && !this.sendData.isFramework) {
+                //TODO:fallback to xhr if jquery is not present
+                var that = this;
+                var xmlhttp = new XMLHttpRequest();
+                xmlhttp.open("POST", this.sendData.url);
+                xmlhttp.setRequestHeader("Content-Type", this.sendData.headers);
+                xmlhttp.send(JSON.stringify(logData));
+                xmlhttp.onreadystatechange = function () {
+                    if ((this.readyState != 4 || this.status != 200))
+                        that.messageManager('AJAX error:' + this.statusText);
+                };
             }
         };
 
@@ -226,10 +255,10 @@ var consoleLogger;
             this.$http = $http;
             this.isConfigDone = false;
         }
-        loggerService.prototype.config = function (shouldLog, sendDataOptions) {
+        loggerService.prototype.config = function (shouldLog, showAsHtml, sendDataOptions) {
             this.isConfigDone = true;
             sendDataOptions.isFramework = true;
-            this.loggerVar = new consoleLogger.logger(shouldLog, sendDataOptions);
+            this.loggerVar = new consoleLogger.logger(shouldLog, showAsHtml, sendDataOptions);
         };
 
         loggerService.prototype.error = function (message) {
@@ -282,6 +311,7 @@ var consoleLogger;
             }
         };
         loggerService.prototype.sendDataToService = function (logData) {
+            var that = this;
             this.$http({
                 url: this.loggerVar.getConfig().url,
                 method: 'POST',
@@ -289,8 +319,9 @@ var consoleLogger;
                 headers: this.loggerVar.getConfig().headers
             }).then(function () {
                 //success
-            }, function () {
+            }, function (d) {
                 //error
+                that.loggerVar.messageManager('Ajax Error:' + d);
             });
         };
         loggerService.prototype.configNotDone = function () {
