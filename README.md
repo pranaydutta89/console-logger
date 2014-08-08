@@ -7,85 +7,91 @@ Features
 2) View log history  <br/>
 3) on/off faciltiy   <br/>
 4) send log data to remote server  <br/>
+5) use as a Angular js service
+6) no dependency to jQuery or any other library
 
 
 How to do ? 
 
 1) Init: 
   
- <code>var loggerObj = new consoleLogger.logger(); //by default its true 
-  </code>
-      <br/>
-      <code>
-        var loggerObj = new consoleLogger.logger(false); //if dn't want to log     
+    var loggerObj = new consoleLogger.logger(); //by default its true 
+    var loggerObj = new consoleLogger.logger(false); //if dn't want to log     
   
- </code>
+
 
 2) Use: 
-  a)
+
+  a) Debug
     
-  <code>
-      loggerObj.debug('this is a debug log');//or
-      </code>
-      <br/>
-      <code>
-      loggerObj.debug(e) //e => error object
-  </code>
+    loggerObj.debug('this is a debug log');//or
+    loggerObj.debug(e) //e => error object
+ 
   
   b) FATAL
-  <code>
-      loggerObj.fatal('this is a fatal log');//or
-      </code>
-      <br/>
-      <code>
-      loggerObj.fatal(e) //e => error object
-  </code>
+  
+    loggerObj.fatal('this is a fatal log');//or
+    loggerObj.fatal(e) //e => error object
+ 
   
   a) ERROR
-  <code>
-      loggerObj.error('this is a error log');//or
-      </code>
-      <br/>
-      <code>
-      loggerObj.error(e) //e => error object
-  </code>
+ 
+    loggerObj.error('this is a error log');//or
+    loggerObj.error(e) //e => error object
+  
   
   a) WARN
-  <code>
-      loggerObj.warn('this is a warn log');//or
-      </code>
-      <br/>
-      <code>
-      loggerObj.warn(e) //e => error object
-  </code>
+ 
+     loggerObj.warn('this is a warn log');//or
+     loggerObj.warn(e) //e => error object
+ 
   
 3) View log history:  
 
-  <code>loggerObj.history() </code>
+    loggerObj.history()
   
 4) Send Data to server: 
 
-  <code>
+
     //configure your logger object
-    </code>
-      <br/>
-      <code>
+   
     var loggerObj = new consoleLogger.logger(true,{url:'testUrlHere',toSend:2});
-    </code>
-      <br/>
-      <code>
     //toSend=1 => send only error and fatal
     //toSend=2 => send all logs
     //even if logging is false then also data will be sent to server
-  </code>
-  
+
+5)  Use As an AngularService  
+
+   a) register the module dependency and do some configuration
+   
+    var app =angular.module('logTest',['consoleLogger']).run(function (loggerService) {
+
+    loggerService.config(true, {url: 'testUrlHere', toSend: 2})//fatal,error :1 , all:2
+    loggerService.error('Error from run')
+    });
+    
+    
+  b) use same as point 2 above inside controller or services 
+    
+    app.controller('demoController',function($scope,loggerService){
+    
+    loggerService.debug('this is a debug log');
+    loggerService.error('this is a error log');
+    loggerService.history(); //to see log history
+    
+    });
+
+    
  
  Browser compatibility 
  
- IE 6+, Chrome-1 ,opera -1 ,firefox -1
+ IE 6+(6-7 don't have console still you can send logs) <br/>
+ Chrome-1 <br/>
+ opera -1 <br/>
+ firefox -1 <br/>
+ safari -1
  
  
  Dependency
  
- - jQuery > 1.7.1 
- - IE6 to IE8 json2/json3
+- IE6 to IE8 json2/json3
