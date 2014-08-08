@@ -42,6 +42,14 @@ var consoleLogger;
     })(consoleLogger.logType || (consoleLogger.logType = {}));
     var logType = consoleLogger.logType;
 
+    (function (errorType) {
+        errorType[errorType["jsonNotPresent"] = 0] = "jsonNotPresent";
+        errorType[errorType["ajaxError"] = 1] = "ajaxError";
+        errorType[errorType["historyEmpty"] = 2] = "historyEmpty";
+        errorType[errorType["configNotDone"] = 3] = "configNotDone";
+    })(consoleLogger.errorType || (consoleLogger.errorType = {}));
+    var errorType = consoleLogger.errorType;
+
     var logWrapperClass = (function () {
         function logWrapperClass() {
             this.browserDetails = window.navigator.userAgent;
@@ -55,7 +63,6 @@ var consoleLogger;
             //default will to send whole data
             this.toSend = 1;
             this.headers = "application/json; charset=utf-8";
-            //public transport:Array<string>  = ['jquery','xhr'];// how you want to send data
             //for angular it will have its own service to send
             this.isFramework = false;
         }
@@ -199,6 +206,24 @@ var consoleLogger;
 
         //end private functions
         //public functions
+        logger.prototype.handleError = function (errT, message) {
+            switch (errT) {
+                case 1 /* ajaxError */:
+                    this.messageManager('Ajax Error:' + message || '');
+                    break;
+
+                case 0 /* jsonNotPresent */:
+                    this.messageManager('Json is undefined ,try including json2/json3' + message || '');
+                    break;
+
+                case 2 /* historyEmpty */:
+                    this.messageManager('No recent activity yet!!' + message || '');
+
+                case 3 /* configNotDone */:
+                    this.messageManager('Initial config not done.');
+            }
+        };
+
         logger.prototype.getConfig = function () {
             return this.sendData;
         };
@@ -206,15 +231,19 @@ var consoleLogger;
         logger.prototype.sendDataToService = function (logData) {
             if (this.sendData && !this.sendData.isFramework) {
                 //TODO:fallback to xhr if jquery is not present
-                var that = this;
-                var xmlhttp = new XMLHttpRequest();
-                xmlhttp.open("POST", this.sendData.url);
-                xmlhttp.setRequestHeader("Content-Type", this.sendData.headers);
-                xmlhttp.send(JSON.stringify(logData));
-                xmlhttp.onreadystatechange = function () {
-                    if ((this.readyState != 4 || this.status != 200))
-                        that.messageManager('AJAX error:' + this.statusText);
-                };
+                if (JSON) {
+                    var that = this;
+                    var xmlhttp = new XMLHttpRequest();
+                    xmlhttp.open("POST", this.sendData.url);
+                    xmlhttp.setRequestHeader("Content-Type", this.sendData.headers);
+                    xmlhttp.send(JSON.stringify(logData));
+                    xmlhttp.onreadystatechange = function () {
+                        if ((this.readyState != 4 || this.status != 200))
+                            that.handleError(1 /* ajaxError */, this.statusText);
+                    };
+                } else {
+                    this.handleError(0 /* jsonNotPresent */);
+                }
             }
         };
 
@@ -228,7 +257,7 @@ var consoleLogger;
 
         logger.prototype.history = function () {
             if (this.logHistory.length == 0) {
-                this.messageManager('No activity yet!!');
+                this.handleError(2 /* historyEmpty */);
             } else {
                 for (var idx in this.logHistory) {
                     this.messageManager('Sr No:' + (parseInt(idx, 10) + 1).toString());
@@ -321,13 +350,13 @@ var consoleLogger;
                 //success
             }, function (d) {
                 //error
-                that.loggerVar.messageManager('Ajax Error:' + d);
+                that.loggerVar.handleError(1 /* ajaxError */, d.statusText);
             });
         };
         loggerService.prototype.configNotDone = function () {
             if (!this.loggerVar)
                 this.loggerVar = new consoleLogger.logger(true);
-            this.loggerVar.messageManager('Initial config not done, try doing consoleLogger.config ');
+            this.loggerVar.handleError(3 /* configNotDone */);
         };
         loggerService.$inject = ['$http'];
         return loggerService;

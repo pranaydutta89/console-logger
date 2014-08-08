@@ -97,13 +97,13 @@ module consoleLogger {
                 //success
             },function(d){
                 //error
-                that.loggerVar.messageManager('Ajax Error:' + d);
+                that.loggerVar.handleError(consoleLogger.errorType.ajaxError,d.statusText);
             });
         }
         private configNotDone(){
             if(!this.loggerVar)
                 this.loggerVar =new consoleLogger.logger(true);
-            this.loggerVar.messageManager('Initial config not done, try doing consoleLogger.config ')
+            this.loggerVar.handleError(consoleLogger.errorType.configNotDone);
         }
         static $inject = ['$http'];
 

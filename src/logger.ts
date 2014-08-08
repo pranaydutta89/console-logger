@@ -15,6 +15,13 @@ module consoleLogger{
         info
     }
 
+    export enum errorType{
+        jsonNotPresent,
+        ajaxError,
+        historyEmpty,
+        configNotDone
+    }
+
     export class logWrapperClass{
         public message:string;
         public messageType:logType;
@@ -29,7 +36,6 @@ module consoleLogger{
         //default will to send whole data
         public toSend:number =1; //fatal,error :1 , all:2
         public headers:string ="application/json; charset=utf-8";
-        //public transport:Array<string>  = ['jquery','xhr'];// how you want to send data
         //for angular it will have its own service to send
         public isFramework:boolean = false;
 
@@ -46,6 +52,8 @@ module consoleLogger{
 
 
         //private functions
+
+
 
         private config(sendDataOptions:sendDataSettings){
             if (sendDataOptions) {
@@ -154,6 +162,28 @@ module consoleLogger{
 
 
         //public functions
+
+
+
+        public handleError(errT:errorType,message?:string){
+            switch (errT){
+                case errorType.ajaxError:
+                    this.messageManager('Ajax Error:'+ message || '');
+                    break;
+
+                case errorType.jsonNotPresent:
+                    this.messageManager('Json is undefined ,try including json2/json3'+ message || '');
+                    break;
+
+                case errorType.historyEmpty:
+                    this.messageManager('No recent activity yet!!'+ message || '');
+
+                    case errorType.configNotDone:
+                    this.messageManager('Initial config not done.');
+
+            }
+        }
+
         public getConfig():sendDataSettings{
             return this.sendData;
         }
@@ -162,17 +192,23 @@ module consoleLogger{
                if(this.sendData && !this.sendData.isFramework)
                {
                   //TODO:fallback to xhr if jquery is not present
+                       if(JSON) {
+                           var that = this;
+                           var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance
+                           xmlhttp.open("POST", this.sendData.url);
+                           xmlhttp.setRequestHeader("Content-Type", this.sendData.headers);
+                           xmlhttp.send(JSON.stringify(logData));
+                           xmlhttp.onreadystatechange = function () {
+                               if ((this.readyState != 4 || this.status != 200))
+                                   that.handleError(errorType.ajaxError,this.statusText);
 
-                       var that =this;
-                       var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance
-                       xmlhttp.open("POST", this.sendData.url);
-                       xmlhttp.setRequestHeader("Content-Type", this.sendData.headers);
-                       xmlhttp.send(JSON.stringify(logData));
-                       xmlhttp.onreadystatechange = function(){
-                           if ((this.readyState !=4 || this.status !=200))
-                               that.messageManager('AJAX error:' + this.statusText)
+                           }
 
-                   }
+
+                       }
+                       else{
+                           this.handleError(errorType.jsonNotPresent);
+                       }
                }
           }
 
@@ -188,7 +224,7 @@ module consoleLogger{
         public history(){
 
             if(this.logHistory.length ==0) {
-                this.messageManager('No activity yet!!');
+                this.handleError(errorType.historyEmpty);
             }
             else
             {
