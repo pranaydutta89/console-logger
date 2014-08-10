@@ -172,14 +172,16 @@ module consoleLogger{
                     break;
 
                 case errorType.jsonNotPresent:
-                    this.messageManager('Json is undefined ,try including json2/json3'+ message || '');
+                    this.messageManager('Json is undefined ,try including json2/json3 '+ message || '');
                     break;
 
                 case errorType.historyEmpty:
-                    this.messageManager('No recent activity yet!!'+ message || '');
+                    this.messageManager('No recent activity yet!! '+ message || '');
+                    break;
 
-                    case errorType.configNotDone:
-                    this.messageManager('Initial config not done.');
+               case errorType.configNotDone:
+                    this.messageManager('Initial config not done. '+ message || '');
+                    break;
 
             }
         }

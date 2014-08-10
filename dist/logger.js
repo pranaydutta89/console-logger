@@ -213,14 +213,16 @@ var consoleLogger;
                     break;
 
                 case 0 /* jsonNotPresent */:
-                    this.messageManager('Json is undefined ,try including json2/json3' + message || '');
+                    this.messageManager('Json is undefined ,try including json2/json3 ' + message || '');
                     break;
 
                 case 2 /* historyEmpty */:
-                    this.messageManager('No recent activity yet!!' + message || '');
+                    this.messageManager('No recent activity yet!! ' + message || '');
+                    break;
 
                 case 3 /* configNotDone */:
-                    this.messageManager('Initial config not done.');
+                    this.messageManager('Initial config not done. ' + message || '');
+                    break;
             }
         };
 
