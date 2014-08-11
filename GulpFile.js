@@ -12,7 +12,7 @@ var foreach = require('gulp-foreach');
 //Prod ready
 
 
-gulp.task('usemin',['tsc'], function(){
+gulp.task('build',['tsc'], function(){
     gulp.src('dist/logger.js') // path to your files
         .pipe(uglify())
         .pipe(gulp.dest('dist/logger.min'));
