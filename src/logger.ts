@@ -193,7 +193,7 @@ module consoleLogger{
         public sendDataToService(logData:logWrapperClass){
                if(this.sendData && !this.sendData.isFramework)
                {
-                  //TODO:fallback to xhr if jquery is not present
+
                        if(JSON) {
                            var that = this;
                            var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance

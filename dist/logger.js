@@ -232,7 +232,6 @@ var consoleLogger;
 
         logger.prototype.sendDataToService = function (logData) {
             if (this.sendData && !this.sendData.isFramework) {
-                //TODO:fallback to xhr if jquery is not present
                 if (JSON) {
                     var that = this;
                     var xmlhttp = new XMLHttpRequest();
@@ -279,7 +278,11 @@ var consoleLogger;
 var consoleLogger;
 (function (consoleLogger) {
     consoleLogger.app = function () {
-        return angular.module('consoleLogger', []).service(consoleLogger);
+        try  {
+            return angular.module('consoleLogger', []).service(consoleLogger);
+        } catch (e) {
+            //no angular
+        }
     }();
     var loggerService = (function () {
         function loggerService($http) {

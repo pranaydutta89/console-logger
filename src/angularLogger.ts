@@ -9,8 +9,12 @@ module consoleLogger {
 
 
     export var app:ng.IModule = function () {
-
-        return angular.module('consoleLogger', []).service(consoleLogger)
+        try {
+            return angular.module('consoleLogger', []).service(consoleLogger)
+        }
+        catch(e){
+            //no angular
+        }
 
     }();
     export class loggerService implements ILogger{
