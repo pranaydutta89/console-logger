@@ -1,5 +1,7 @@
 /**
  * Created by prandutt on 8/6/2014.
+ *
+ * using angular service to log the data and do the functions same as logger
  */
 /// <reference path="../dependencies/angular.d.ts"/>
 /// <reference path="interface.ts"/>
@@ -20,14 +22,29 @@ module consoleLogger {
     export class loggerService implements ILogger{
          private loggerVar:consoleLogger.logger;
          private isConfigDone:boolean=false;
+
+        //Private function's
+         private configNotDone(){
+            if(!this.loggerVar)
+                this.loggerVar =new consoleLogger.logger(true);
+            this.loggerVar.handleError(consoleLogger.errorType.configNotDone);
+        }
+        //End private function's
+
+
+        //Public Function's
          public config(shouldLog:boolean ,showAsHtml?:boolean,sendDataOptions?:consoleLogger.sendDataSettings) {
 
+             //take the config and pass it to logger.ts
               this.isConfigDone=true;
               sendDataOptions.isFramework=true;
               this.loggerVar = new consoleLogger.logger(shouldLog,showAsHtml,sendDataOptions);
          }
 
         public error(message:any){
+
+            //implementing the interface and its function
+            //call the native logger.ts function only
            if(this.isConfigDone){
                //config done
                this.sendDataToService(this.loggerVar.error(message));
@@ -80,6 +97,7 @@ module consoleLogger {
         }
 
         public history(){
+            //for history also config is mandatory
             if(this.isConfigDone){
                 //config done
                 this.loggerVar.history();
@@ -91,6 +109,8 @@ module consoleLogger {
             }
         }
          public  sendDataToService(logData:logWrapperClass){
+
+             //using the native $http service to send data
              var that =this;
             this.$http({
                 url:this.loggerVar.getConfig().url,
@@ -104,11 +124,10 @@ module consoleLogger {
                 that.loggerVar.handleError(consoleLogger.errorType.ajaxError,d.statusText);
             });
         }
-        private configNotDone(){
-            if(!this.loggerVar)
-                this.loggerVar =new consoleLogger.logger(true);
-            this.loggerVar.handleError(consoleLogger.errorType.configNotDone);
-        }
+       //End Public Function's
+
+
+        //for minification purpose using inject
         static $inject = ['$http'];
 
         constructor(public $http) {

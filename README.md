@@ -78,7 +78,7 @@ How to do ?
 
     loggerService.config(true, false, {url: 'testUrlHere', toSend: 2})
     /* fatal,error :1 , all:2
-     * see point 4 for config optiions
+     * see point 4 for config options
      */
     loggerService.error('Error from run')
     });

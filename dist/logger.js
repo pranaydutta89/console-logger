@@ -1,10 +1,13 @@
 /**
 * Created by prandutt on 8/6/2014.
+* contract which each logger service have to expose
 */
 var consoleLogger;
 (function (consoleLogger) {
     /**
     * Created by prandutt on 8/8/2014.
+    *
+    * utilities function will be here which are different from core library
     */
     (function (utils) {
         var utilities = (function () {
@@ -25,6 +28,12 @@ var consoleLogger;
 })(consoleLogger || (consoleLogger = {}));
 /**
 * Created by prandutt on 7/28/2014.
+*
+* this would ne the main core library for logger
+* every other service will connect to this library for actions
+* like we did it in angular logger every function is executed from here
+* except the senddata which is using native angular service
+* the advantage is changing here will fix every other dependency
 */
 /// <reference path="../dependencies/jquery.d.ts"/>
 /// <reference path="interface.ts"/>
@@ -33,6 +42,7 @@ var consoleLogger;
 (function (consoleLogger) {
     var utils = new consoleLogger.utils.utilities();
     (function (logType) {
+        //types of log are here
         logType[logType["warn"] = 1] = "warn";
         logType[logType["fatal"] = 2] = "fatal";
         logType[logType["error"] = 3] = "error";
@@ -43,6 +53,7 @@ var consoleLogger;
     var logType = consoleLogger.logType;
 
     (function (errorType) {
+        //error types easy to organize error through this
         errorType[errorType["jsonNotPresent"] = 0] = "jsonNotPresent";
         errorType[errorType["ajaxError"] = 1] = "ajaxError";
         errorType[errorType["historyEmpty"] = 2] = "historyEmpty";
@@ -63,17 +74,19 @@ var consoleLogger;
             //default will to send whole data
             this.toSend = 1;
             this.headers = "application/json; charset=utf-8";
-            //for angular it will have its own service to send
+            //true when we are using any other service to send data like angular etc etc.
             this.isFramework = false;
         }
         return sendDataSettings;
     })();
     consoleLogger.sendDataSettings = sendDataSettings;
 
+    //we need to implement ILogger so that consistency is maintained if we create another logger class like angularLogger.ts
     var logger = (function () {
         //end public functions
         function logger(shouldLog, showAsHtml, sendDataOptions) {
             var _this = this;
+            //This is the main core class
             this.logging = true;
             this.showAsHtml = false;
             this.logHistory = [];
@@ -110,6 +123,7 @@ var consoleLogger;
         }
         //private functions
         logger.prototype.config = function (sendDataOptions) {
+            //all the config part will be done here
             if (sendDataOptions) {
                 this.sendData = new sendDataSettings();
                 if (sendDataOptions.toSend)
@@ -127,6 +141,7 @@ var consoleLogger;
         };
 
         logger.prototype.performCommonJob = function (message, logT) {
+            //common jobs which don't require any flag check done here
             var logWarpperObj = this.messageFormatting(message);
             logWarpperObj.messageType = logT;
             this.logHistory.push(logWarpperObj);
@@ -135,6 +150,7 @@ var consoleLogger;
         };
 
         logger.prototype.messageFormatting = function (mes) {
+            //user send a string or a object it is being wrapped here
             var logWarpperObj = new logWrapperClass();
             logWarpperObj.eventDT = new Date();
             if (typeof (mes) === 'object') {
@@ -159,6 +175,7 @@ var consoleLogger;
         };
 
         logger.prototype.showLog = function (mes) {
+            //for showing the log to the console
             if (console && this.logging && mes) {
                 //console is present show them the logs
                 var message;
@@ -188,6 +205,8 @@ var consoleLogger;
         };
 
         logger.prototype.showLogAsHtml = function (mes) {
+            //when we want to render log as HTML use this function
+            //its not called directly called via showlog()
             //don't use any lib to manipulate the dom
             //since we want to create non dependent lib
             if (this.showAsHtml) {
@@ -231,6 +250,7 @@ var consoleLogger;
         };
 
         logger.prototype.sendDataToService = function (logData) {
+            //send data to remote server generic method using xhr
             if (this.sendData && !this.sendData.isFramework) {
                 if (JSON) {
                     var that = this;
@@ -257,6 +277,7 @@ var consoleLogger;
         };
 
         logger.prototype.history = function () {
+            //shows us the log history ,does not render as html
             if (this.logHistory.length == 0) {
                 this.handleError(2 /* historyEmpty */);
             } else {
@@ -272,6 +293,8 @@ var consoleLogger;
 })(consoleLogger || (consoleLogger = {}));
 /**
 * Created by prandutt on 8/6/2014.
+*
+* using angular service to log the data and do the functions same as logger
 */
 /// <reference path="../dependencies/angular.d.ts"/>
 /// <reference path="interface.ts"/>
@@ -289,13 +312,25 @@ var consoleLogger;
             this.$http = $http;
             this.isConfigDone = false;
         }
+        //Private function's
+        loggerService.prototype.configNotDone = function () {
+            if (!this.loggerVar)
+                this.loggerVar = new consoleLogger.logger(true);
+            this.loggerVar.handleError(3 /* configNotDone */);
+        };
+
+        //End private function's
+        //Public Function's
         loggerService.prototype.config = function (shouldLog, showAsHtml, sendDataOptions) {
+            //take the config and pass it to logger.ts
             this.isConfigDone = true;
             sendDataOptions.isFramework = true;
             this.loggerVar = new consoleLogger.logger(shouldLog, showAsHtml, sendDataOptions);
         };
 
         loggerService.prototype.error = function (message) {
+            //implementing the interface and its function
+            //call the native logger.ts function only
             if (this.isConfigDone) {
                 //config done
                 this.sendDataToService(this.loggerVar.error(message));
@@ -336,6 +371,7 @@ var consoleLogger;
         };
 
         loggerService.prototype.history = function () {
+            //for history also config is mandatory
             if (this.isConfigDone) {
                 //config done
                 this.loggerVar.history();
@@ -345,6 +381,7 @@ var consoleLogger;
             }
         };
         loggerService.prototype.sendDataToService = function (logData) {
+            //using the native $http service to send data
             var that = this;
             this.$http({
                 url: this.loggerVar.getConfig().url,
@@ -358,11 +395,7 @@ var consoleLogger;
                 that.loggerVar.handleError(1 /* ajaxError */, d.statusText);
             });
         };
-        loggerService.prototype.configNotDone = function () {
-            if (!this.loggerVar)
-                this.loggerVar = new consoleLogger.logger(true);
-            this.loggerVar.handleError(3 /* configNotDone */);
-        };
+
         loggerService.$inject = ['$http'];
         return loggerService;
     })();
@@ -370,6 +403,8 @@ var consoleLogger;
 })(consoleLogger || (consoleLogger = {}));
 /**
 * Created by prandutt on 8/6/2014.
+* its jus for the compilation part
+* all the dependent js will be referenced here
 */
 //files to compile
 /// <reference path="logger.ts"/>

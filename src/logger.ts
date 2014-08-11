@@ -1,5 +1,11 @@
 /**
  * Created by prandutt on 7/28/2014.
+ *
+ * this would ne the main core library for logger
+ * every other service will connect to this library for actions
+ * like we did it in angular logger every function is executed from here
+ * except the senddata which is using native angular service
+ * the advantage is changing here will fix every other dependency
  */
 /// <reference path="../dependencies/jquery.d.ts"/>
 /// <reference path="interface.ts"/>
@@ -7,6 +13,7 @@
 module consoleLogger{
     var  utils:consoleLogger.utils.utilities = new consoleLogger.utils.utilities();
    export enum logType{
+       //types of log are here
         warn =1,
         fatal,
         error ,
@@ -16,6 +23,8 @@ module consoleLogger{
     }
 
     export enum errorType{
+
+        //error types easy to organize error through this
         jsonNotPresent,
         ajaxError,
         historyEmpty,
@@ -23,6 +32,8 @@ module consoleLogger{
     }
 
     export class logWrapperClass{
+
+        //log message get wrapped in the instance of this class
         public message:string;
         public messageType:logType;
         public stack:string;
@@ -32,17 +43,21 @@ module consoleLogger{
     }
 
     export class sendDataSettings{
+
+        //config section provided to the user
         public url:string;
         //default will to send whole data
         public toSend:number =1; //fatal,error :1 , all:2
         public headers:string ="application/json; charset=utf-8";
-        //for angular it will have its own service to send
+        //true when we are using any other service to send data like angular etc etc.
         public isFramework:boolean = false;
 
     }
 
-
+//we need to implement ILogger so that consistency is maintained if we create another logger class like angularLogger.ts
     export class logger implements ILogger{
+
+        //This is the main core class
 
         private logging:boolean =true;
         private showAsHtml:boolean=false;
@@ -56,6 +71,9 @@ module consoleLogger{
 
 
         private config(sendDataOptions:sendDataSettings){
+
+           //all the config part will be done here
+
             if (sendDataOptions) {
                 this.sendData =new sendDataSettings()
                 if(sendDataOptions.toSend)
@@ -74,6 +92,9 @@ module consoleLogger{
 
         private performCommonJob(message:any,logT:logType):logWrapperClass{
 
+
+            //common jobs which don't require any flag check done here
+
             var logWarpperObj:logWrapperClass =this.messageFormatting(message);
             logWarpperObj.messageType=logT;
             this.logHistory.push(logWarpperObj);
@@ -84,6 +105,8 @@ module consoleLogger{
 
 
         private messageFormatting(mes:any){
+
+            //user send a string or a object it is being wrapped here
             var logWarpperObj =  new logWrapperClass();
             logWarpperObj.eventDT =new Date();
             if(typeof(mes) === 'object' ) {
@@ -113,6 +136,9 @@ module consoleLogger{
         }
 
         private showLog(mes:logWrapperClass){
+
+            //for showing the log to the console
+
             if(console && this.logging && mes)
             {
                 //console is present show them the logs
@@ -142,6 +168,10 @@ module consoleLogger{
 
         private showLogAsHtml(mes:logWrapperClass){
 
+            //when we want to render log as HTML use this function
+            //its not called directly called via showlog()
+
+
             //don't use any lib to manipulate the dom
             //since we want to create non dependent lib
             if(this.showAsHtml) {
@@ -166,6 +196,8 @@ module consoleLogger{
 
 
         public handleError(errT:errorType,message?:string){
+            //generic error handler to organize the code
+
             switch (errT){
                 case errorType.ajaxError:
                     this.messageManager('Ajax Error:'+ message || '');
@@ -191,6 +223,8 @@ module consoleLogger{
         }
 
         public sendDataToService(logData:logWrapperClass){
+
+            //send data to remote server generic method using xhr
                if(this.sendData && !this.sendData.isFramework)
                {
 
@@ -224,7 +258,7 @@ module consoleLogger{
         }
 
         public history(){
-
+             //shows us the log history ,does not render as html
             if(this.logHistory.length ==0) {
                 this.handleError(errorType.historyEmpty);
             }
