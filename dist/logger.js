@@ -53,7 +53,7 @@ var consoleLogger;
     var logType = consoleLogger.logType;
 
     (function (errorType) {
-        //error types easy to organize error through this
+        //error types, easy to organize error through this
         errorType[errorType["jsonNotPresent"] = 0] = "jsonNotPresent";
         errorType[errorType["ajaxError"] = 1] = "ajaxError";
         errorType[errorType["historyEmpty"] = 2] = "historyEmpty";
@@ -115,7 +115,7 @@ var consoleLogger;
 
                 return logData;
             };
-            //checking jQuery presence
+            //INIT
             if (showAsHtml)
                 this.showAsHtml = showAsHtml;
             this.logging = shouldLog;

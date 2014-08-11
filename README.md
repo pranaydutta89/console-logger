@@ -6,7 +6,7 @@ Features
 1) Simple console logging <br/>
 2) Show log data on your html page <br/>
 3) View log history  <br/>
-4) Central on/off faciltiy   <br/>
+4) Central on/off facility   <br/>
 5) Send log data to remote server  <br/>
 6) Use as a Angularjs service <br/>
 7) No dependency to jQuery or any other library
@@ -107,4 +107,4 @@ How to do ?
  
  Dependency
  
-- IE6 to IE8 json2/json3
+- IE6 to IE8 json2/json3.js (sorry can't help it.)

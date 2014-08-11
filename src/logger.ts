@@ -14,7 +14,7 @@ module consoleLogger{
     var  utils:consoleLogger.utils.utilities = new consoleLogger.utils.utilities();
    export enum logType{
        //types of log are here
-        warn =1,
+        warn =1,//starts with because 0 was causing false in IF statement
         fatal,
         error ,
         debug,
@@ -24,7 +24,7 @@ module consoleLogger{
 
     export enum errorType{
 
-        //error types easy to organize error through this
+        //error types, easy to organize error through this
         jsonNotPresent,
         ajaxError,
         historyEmpty,
@@ -310,7 +310,8 @@ module consoleLogger{
 
 
         constructor(shouldLog:boolean,showAsHtml?:boolean,sendDataOptions?:sendDataSettings){
-            //checking jQuery presence
+
+           //INIT
 
             if(showAsHtml)
             this.showAsHtml =showAsHtml;
