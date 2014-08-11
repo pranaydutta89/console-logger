@@ -225,6 +225,7 @@ module consoleLogger{
         public sendDataToService(logData:logWrapperClass){
 
             //send data to remote server generic method using xhr
+            //if data is json then only stringify else send as on
                if(this.sendData && !this.sendData.isFramework)
                {
 
