@@ -8,8 +8,8 @@ Features
 3) View log history  <br/>
 4) Central on/off faciltiy   <br/>
 5) Send log data to remote server  <br/>
-6) Use as a Angularjs service
-7) no dependency to jQuery or any other library
+6) Use as a Angularjs service <br/>
+7) No dependency to jQuery or any other library
 
 
 How to do ? 
@@ -21,7 +21,8 @@ How to do ?
     
     //if you want to log as an html
     
-    var loggerObj = new consoleLogger.logger(true,true);//second argument is for log as an html, default is false 
+    var loggerObj = new consoleLogger.logger(true,true);
+    //second argument is for log as an html, default is false 
     
 
 2) Use: 
