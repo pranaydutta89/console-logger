@@ -140,11 +140,26 @@ var consoleLogger;
             }
         };
 
+        logger.prototype.pushHistoryData = function (logWrapperObj) {
+            //use session storage to store and retrieve data if not present then fall back
+            if (window.sessionStorage) {
+                var tempHisArr = [];
+                if (window.sessionStorage['logHistory'])
+                    tempHisArr = JSON.parse(window.sessionStorage['logHistory']);
+
+                tempHisArr.push(logWrapperObj);
+                window.sessionStorage['logHistory'] = JSON.stringify(tempHisArr);
+            } else {
+                //session storage is not present use the conventional variable type
+                this.logHistory.push(logWrapperObj);
+            }
+        };
+
         logger.prototype.performCommonJob = function (message, logT) {
             //common jobs which don't require any flag check done here
             var logWarpperObj = this.messageFormatting(message);
             logWarpperObj.messageType = logT;
-            this.logHistory.push(logWarpperObj);
+            this.pushHistoryData(logWarpperObj);
             this.showLog(logWarpperObj);
             return logWarpperObj;
         };
@@ -278,12 +293,24 @@ var consoleLogger;
 
         logger.prototype.history = function () {
             //shows us the log history ,does not render as html
-            if (this.logHistory.length == 0) {
-                this.handleError(2 /* historyEmpty */);
+            if (window.sessionStorage['logHistory']) {
+                var tempHis = JSON.parse(window.sessionStorage['logHistory']);
+                if (tempHis.length == 0) {
+                    this.handleError(2 /* historyEmpty */);
+                } else {
+                    for (var idx in tempHis) {
+                        this.messageManager('Sr No:' + (parseInt(idx, 10) + 1).toString());
+                        this.showLog(tempHis[idx]);
+                    }
+                }
             } else {
-                for (var idx in this.logHistory) {
-                    this.messageManager('Sr No:' + (parseInt(idx, 10) + 1).toString());
-                    this.showLog(this.logHistory[idx]);
+                if (this.logHistory.length == 0) {
+                    this.handleError(2 /* historyEmpty */);
+                } else {
+                    for (var idx in this.logHistory) {
+                        this.messageManager('Sr No:' + (parseInt(idx, 10) + 1).toString());
+                        this.showLog(this.logHistory[idx]);
+                    }
                 }
             }
         };
