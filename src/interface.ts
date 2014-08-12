@@ -1,5 +1,6 @@
 /**
  * Created by prandutt on 8/6/2014.
+ * contract which each logger service have to expose
  */
 
 
