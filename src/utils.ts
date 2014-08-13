@@ -32,20 +32,20 @@ module consoleLogger.utils{
             switch(feature){
                 case browserFeatureCheck.sessionStorage:
                      //check if session storage is present in browser
-                     if(window.sessionStorage)
+                     if(window.sessionStorage && typeof sessionStorage !="undefined")
                      return true;
                   break;
 
                 case browserFeatureCheck.json:
                       //json is present or not
-                     if(JSON)
+                     if(typeof JSON !="undefined")
                       return true;
 
                     break;
 
                 case browserFeatureCheck.console:
                      //browser console is there or not
-                    if(window.console)
+                    if(typeof console !="undefined")
                       return true;
                     break;
 

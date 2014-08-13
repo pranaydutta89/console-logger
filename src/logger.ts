@@ -90,7 +90,8 @@ module consoleLogger{
 
         private pushHistoryData(logWrapperObj:logWrapperClass){
             //use session storage to store and retrieve data if not present then fall back
-            if(utilsClass.isFeaturePresent(utils.browserFeatureCheck.sessionStorage)){
+            if(utilsClass.isFeaturePresent(utils.browserFeatureCheck.sessionStorage) &&
+                utilsClass.isFeaturePresent(utils.browserFeatureCheck.json)){
                 var tempHisArr:Array<logWrapperClass> =[];
                 if(window.sessionStorage['logHistory'])
                     tempHisArr =JSON.parse(window.sessionStorage['logHistory']);
@@ -281,7 +282,8 @@ module consoleLogger{
              //shows us the log history ,does not render as html
 
 
-            if(utilsClass.isFeaturePresent(utils.browserFeatureCheck.sessionStorage)){
+            if(utilsClass.isFeaturePresent(utils.browserFeatureCheck.sessionStorage) &&
+                utilsClass.isFeaturePresent(utils.browserFeatureCheck.json)){
 
                 var tempHis = JSON.parse(window.sessionStorage['logHistory']);
                 if(tempHis.length ==0){

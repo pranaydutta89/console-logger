@@ -33,20 +33,20 @@ var consoleLogger;
                 switch (feature) {
                     case 0 /* sessionStorage */:
                         //check if session storage is present in browser
-                        if (window.sessionStorage)
+                        if (window.sessionStorage && typeof sessionStorage != "undefined")
                             return true;
                         break;
 
                     case 1 /* json */:
                         //json is present or not
-                        if (JSON)
+                        if (typeof JSON != "undefined")
                             return true;
 
                         break;
 
                     case 2 /* console */:
                         //browser console is there or not
-                        if (window.console)
+                        if (typeof console != "undefined")
                             return true;
                         break;
                 }
@@ -179,7 +179,7 @@ var consoleLogger;
 
         logger.prototype.pushHistoryData = function (logWrapperObj) {
             //use session storage to store and retrieve data if not present then fall back
-            if (consoleLogger.utilsClass.isFeaturePresent(0 /* sessionStorage */)) {
+            if (consoleLogger.utilsClass.isFeaturePresent(0 /* sessionStorage */) && consoleLogger.utilsClass.isFeaturePresent(1 /* json */)) {
                 var tempHisArr = [];
                 if (window.sessionStorage['logHistory'])
                     tempHisArr = JSON.parse(window.sessionStorage['logHistory']);
@@ -338,7 +338,7 @@ var consoleLogger;
 
         logger.prototype.history = function () {
             //shows us the log history ,does not render as html
-            if (consoleLogger.utilsClass.isFeaturePresent(0 /* sessionStorage */)) {
+            if (consoleLogger.utilsClass.isFeaturePresent(0 /* sessionStorage */) && consoleLogger.utilsClass.isFeaturePresent(1 /* json */)) {
                 var tempHis = JSON.parse(window.sessionStorage['logHistory']);
                 if (tempHis.length == 0) {
                     this.handleError(2 /* historyEmpty */);
