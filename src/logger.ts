@@ -114,6 +114,7 @@ module consoleLogger{
             logWarpperObj.messageType=logT;
             this.pushHistoryData(logWarpperObj);
             this.showLog(logWarpperObj);
+            this.showLogAsHtml(logWarpperObj);
             return logWarpperObj;
         }
 
@@ -176,7 +177,7 @@ module consoleLogger{
                     case logType.log:console.log(message);
                         break;
                 }
-                this.showLogAsHtml(mes);
+
             }
 
         }
@@ -189,7 +190,7 @@ module consoleLogger{
 
             //don't use any lib to manipulate the dom
             //since we want to create non dependent lib
-            if(this.showAsHtml) {
+            if(this.showAsHtml && mes) {
                 var msg:string;
                 var root = document.getElementsByTagName('body')[0];
                 var parentDiv = document.createElement('div');

@@ -130,7 +130,10 @@ module consoleLogger {
                 url:this.loggerVar.getConfig().url,
                 method: 'POST',
                 data:data,
-                headers: header
+                withCredentials: true,
+                headers: {
+                    'Content-Type':header
+                }
             }).then(function(){
                 //success
             },function(d){

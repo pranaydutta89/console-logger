@@ -198,6 +198,7 @@ var consoleLogger;
             logWarpperObj.messageType = logT;
             this.pushHistoryData(logWarpperObj);
             this.showLog(logWarpperObj);
+            this.showLogAsHtml(logWarpperObj);
             return logWarpperObj;
         };
 
@@ -252,7 +253,6 @@ var consoleLogger;
                         console.log(message);
                         break;
                 }
-                this.showLogAsHtml(mes);
             }
         };
 
@@ -261,7 +261,7 @@ var consoleLogger;
             //its not called directly called via showlog()
             //don't use any lib to manipulate the dom
             //since we want to create non dependent lib
-            if (this.showAsHtml) {
+            if (this.showAsHtml && mes) {
                 var msg;
                 var root = document.getElementsByTagName('body')[0];
                 var parentDiv = document.createElement('div');
@@ -472,7 +472,10 @@ var consoleLogger;
                 url: this.loggerVar.getConfig().url,
                 method: 'POST',
                 data: data,
-                headers: header
+                withCredentials: true,
+                headers: {
+                    'Content-Type': header
+                }
             }).then(function () {
                 //success
             }, function (d) {
