@@ -45,7 +45,7 @@ module consoleLogger.utils{
 
                 case browserFeatureCheck.console:
                      //browser console is there or not
-                    if(typeof console !="undefined")
+                    if(typeof console !="undefined" || window.console)
                       return true;
                     break;
 

@@ -46,7 +46,7 @@ var consoleLogger;
 
                     case 2 /* console */:
                         //browser console is there or not
-                        if (typeof console != "undefined")
+                        if (typeof console != "undefined" || window.console)
                             return true;
                         break;
                 }
