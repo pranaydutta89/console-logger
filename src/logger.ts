@@ -11,7 +11,8 @@
 /// <reference path="interface.ts"/>
 /// <reference path="utils.ts"/>
 module consoleLogger{
-    var  utils:consoleLogger.utils.utilities = new consoleLogger.utils.utilities();
+   export var  utilsClass:consoleLogger.utils.utilities = new consoleLogger.utils.utilities();
+    import utils =consoleLogger.utils;
    export enum logType{
        //types of log are here
         warn =1,//starts with because 0 was causing false in IF statement
@@ -48,7 +49,6 @@ module consoleLogger{
         public url:string;
         //default will to send whole data
         public toSend:number =1; //fatal,error :1 , all:2
-        public headers:string ="application/json; charset=utf-8";
         //true when we are using any other service to send data like angular etc etc.
         public isFramework:boolean = false;
 
@@ -79,10 +79,8 @@ module consoleLogger{
                 if(sendDataOptions.toSend)
                     this.sendData.toSend = sendDataOptions.toSend;
 
-                if(sendDataOptions.headers)
-                    this.sendData.headers = sendDataOptions.headers;
 
-                if(sendDataOptions.url)
+                 if(sendDataOptions.url)
                     this.sendData.url= sendDataOptions.url;
 
                 if(sendDataOptions.isFramework)
@@ -92,7 +90,7 @@ module consoleLogger{
 
         private pushHistoryData(logWrapperObj:logWrapperClass){
             //use session storage to store and retrieve data if not present then fall back
-            if(window.sessionStorage){
+            if(utilsClass.isFeaturePresent(utils.browserFeatureCheck.sessionStorage)){
                 var tempHisArr:Array<logWrapperClass> =[];
                 if(window.sessionStorage['logHistory'])
                     tempHisArr =JSON.parse(window.sessionStorage['logHistory']);
@@ -127,18 +125,18 @@ module consoleLogger{
             logWarpperObj.eventDT =new Date();
             if(typeof(mes) === 'object' ) {
                 if(mes.message)
-                    logWarpperObj.message =utils.trim(mes.message);
+                    logWarpperObj.message =utilsClass.trim(mes.message);
                 else
                     logWarpperObj.message='NA';
 
                 if(mes.stack)
-                    logWarpperObj.stack = utils.trim(mes.stack);
+                    logWarpperObj.stack = utilsClass.trim(mes.stack);
                 else
                     logWarpperObj.stack='NA';
             }
             else if(typeof(mes) ==='string'){
 
-                logWarpperObj.message = utils.trim(mes);
+                logWarpperObj.message = utilsClass.trim(mes);
                 logWarpperObj.stack ='NA';
 
             }
@@ -155,7 +153,7 @@ module consoleLogger{
 
             //for showing the log to the console
 
-            if(console && this.logging && mes)
+            if(utilsClass.isFeaturePresent(utils.browserFeatureCheck.console) && this.logging && mes)
             {
                 //console is present show them the logs
                 var message:string;
@@ -241,26 +239,32 @@ module consoleLogger{
         public sendDataToService(logData:logWrapperClass){
 
             //send data to remote server generic method using xhr
+            //this.sendData contains config =
                if(this.sendData && !this.sendData.isFramework)
                {
-
-                       if(JSON) {
-                           var that = this;
-                           var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance
-                           xmlhttp.open("POST", this.sendData.url);
-                           xmlhttp.setRequestHeader("Content-Type", this.sendData.headers);
-                           xmlhttp.send(JSON.stringify(logData));
-                           xmlhttp.onreadystatechange = function () {
-                               if ((this.readyState != 4 || this.status != 200))
-                                   that.handleError(errorType.ajaxError,this.statusText);
-
-                           }
+                   var that = this;
+                   var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance
+                   xmlhttp.open("POST", this.sendData.url);
 
 
+                     var data:any;
+                       if(utilsClass.isFeaturePresent(utils.browserFeatureCheck.json)) {
+                           //try to send data as json
+                           xmlhttp.setRequestHeader("Content-Type", 'application/json; charset=utf-8');
+                           data = JSON.stringify(logData)
                        }
                        else{
-                           this.handleError(errorType.jsonNotPresent);
+                          //if json is not there then send data as form
+                           xmlhttp.setRequestHeader("Content-Type", 'application/x-www-form-urlencoded');
+                           data ='message='+logData.message+'&messageType='+logData.messageType+'&eventDT='+logData.eventDT+'&stack='+logData.stack+'&browserDetails='+logData.browserDetails
                        }
+
+                   xmlhttp.send(data);
+                   xmlhttp.onreadystatechange = function () {
+                       if ((this.readyState != 4 || this.status != 200))
+                           that.handleError(errorType.ajaxError,this.statusText);
+
+                   }
                }
           }
 
@@ -277,7 +281,7 @@ module consoleLogger{
              //shows us the log history ,does not render as html
 
 
-            if(window.sessionStorage['logHistory']){
+            if(utilsClass.isFeaturePresent(utils.browserFeatureCheck.sessionStorage)){
 
                 var tempHis = JSON.parse(window.sessionStorage['logHistory']);
                 if(tempHis.length ==0){

@@ -112,11 +112,25 @@ module consoleLogger {
 
              //using the native $http service to send data
              var that =this;
+
+             var data:any;
+             var header:string;
+             if(utilsClass.isFeaturePresent(utils.browserFeatureCheck.json)) {
+                 //try to send data as json
+                 header='application/json; charset=utf-8';
+                 data = JSON.stringify(logData)
+             }
+             else{
+                 //if json is not there then send data as form
+                 header='application/x-www-form-urlencoded';
+                 data ='message='+logData.message+'&messageType='+logData.messageType+'&eventDT='+logData.eventDT+'&stack='+logData.stack+'&browserDetails='+logData.browserDetails
+             }
+
             this.$http({
                 url:this.loggerVar.getConfig().url,
                 method: 'POST',
-                data:JSON.stringify(logData),
-                headers: this.loggerVar.getConfig().headers
+                data:data,
+                headers: header
             }).then(function(){
                 //success
             },function(d){
