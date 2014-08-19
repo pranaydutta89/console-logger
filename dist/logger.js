@@ -10,9 +10,49 @@ var consoleLogger;
     * utilities function will be here which are different from core library
     */
     (function (utils) {
+        (function (browserFeatureCheck) {
+            browserFeatureCheck[browserFeatureCheck["sessionStorage"] = 0] = "sessionStorage";
+            browserFeatureCheck[browserFeatureCheck["json"] = 1] = "json";
+            browserFeatureCheck[browserFeatureCheck["console"] = 2] = "console";
+        })(utils.browserFeatureCheck || (utils.browserFeatureCheck = {}));
+        var browserFeatureCheck = utils.browserFeatureCheck;
+
         var utilities = (function () {
             function utilities() {
             }
+            utilities.prototype.ieVersion = function () {
+                var v = 3, div = document.createElement('div'), all = div.getElementsByTagName('i');
+
+                while (div.innerHTML = '<!--[if gt IE ' + (++v) + ']><i></i>< ![endif]-->', all[0])
+                    ;
+
+                return v > 4 ? v : undefined;
+            };
+
+            utilities.prototype.isFeaturePresent = function (feature) {
+                switch (feature) {
+                    case 0 /* sessionStorage */:
+                        //check if session storage is present in browser
+                        if (window.sessionStorage && typeof sessionStorage != "undefined")
+                            return true;
+                        break;
+
+                    case 1 /* json */:
+                        //json is present or not
+                        if (typeof JSON != "undefined")
+                            return true;
+
+                        break;
+
+                    case 2 /* console */:
+                        //browser console is there or not
+                        if (typeof console != "undefined" || window.console)
+                            return true;
+                        break;
+                }
+                return false;
+            };
+
             utilities.prototype.trim = function (message) {
                 try  {
                     return message.toString().trim();
@@ -40,7 +80,8 @@ var consoleLogger;
 /// <reference path="utils.ts"/>
 var consoleLogger;
 (function (consoleLogger) {
-    var utils = new consoleLogger.utils.utilities();
+    consoleLogger.utilsClass = new consoleLogger.utils.utilities();
+    var utils = consoleLogger.utils;
     (function (logType) {
         //types of log are here
         logType[logType["warn"] = 1] = "warn";
@@ -73,7 +114,6 @@ var consoleLogger;
         function sendDataSettings() {
             //default will to send whole data
             this.toSend = 1;
-            this.headers = "application/json; charset=utf-8";
             //true when we are using any other service to send data like angular etc etc.
             this.isFramework = false;
         }
@@ -129,9 +169,6 @@ var consoleLogger;
                 if (sendDataOptions.toSend)
                     this.sendData.toSend = sendDataOptions.toSend;
 
-                if (sendDataOptions.headers)
-                    this.sendData.headers = sendDataOptions.headers;
-
                 if (sendDataOptions.url)
                     this.sendData.url = sendDataOptions.url;
 
@@ -140,12 +177,28 @@ var consoleLogger;
             }
         };
 
+        logger.prototype.pushHistoryData = function (logWrapperObj) {
+            //use session storage to store and retrieve data if not present then fall back
+            if (consoleLogger.utilsClass.isFeaturePresent(0 /* sessionStorage */) && consoleLogger.utilsClass.isFeaturePresent(1 /* json */)) {
+                var tempHisArr = [];
+                if (window.sessionStorage['logHistory'])
+                    tempHisArr = JSON.parse(window.sessionStorage['logHistory']);
+
+                tempHisArr.push(logWrapperObj);
+                window.sessionStorage['logHistory'] = JSON.stringify(tempHisArr);
+            } else {
+                //session storage is not present use the conventional variable type
+                this.logHistory.push(logWrapperObj);
+            }
+        };
+
         logger.prototype.performCommonJob = function (message, logT) {
             //common jobs which don't require any flag check done here
             var logWarpperObj = this.messageFormatting(message);
             logWarpperObj.messageType = logT;
-            this.logHistory.push(logWarpperObj);
+            this.pushHistoryData(logWarpperObj);
             this.showLog(logWarpperObj);
+            this.showLogAsHtml(logWarpperObj);
             return logWarpperObj;
         };
 
@@ -155,16 +208,16 @@ var consoleLogger;
             logWarpperObj.eventDT = new Date();
             if (typeof (mes) === 'object') {
                 if (mes.message)
-                    logWarpperObj.message = utils.trim(mes.message);
+                    logWarpperObj.message = consoleLogger.utilsClass.trim(mes.message);
                 else
                     logWarpperObj.message = 'NA';
 
                 if (mes.stack)
-                    logWarpperObj.stack = utils.trim(mes.stack);
+                    logWarpperObj.stack = consoleLogger.utilsClass.trim(mes.stack);
                 else
                     logWarpperObj.stack = 'NA';
             } else if (typeof (mes) === 'string') {
-                logWarpperObj.message = utils.trim(mes);
+                logWarpperObj.message = consoleLogger.utilsClass.trim(mes);
                 logWarpperObj.stack = 'NA';
             } else {
                 //no supported format
@@ -176,7 +229,7 @@ var consoleLogger;
 
         logger.prototype.showLog = function (mes) {
             //for showing the log to the console
-            if (console && this.logging && mes) {
+            if (consoleLogger.utilsClass.isFeaturePresent(2 /* console */) && this.logging && mes) {
                 //console is present show them the logs
                 var message;
                 if (mes.messageType && mes.messageType !== 5 /* log */)
@@ -200,7 +253,6 @@ var consoleLogger;
                         console.log(message);
                         break;
                 }
-                this.showLogAsHtml(mes);
             }
         };
 
@@ -209,7 +261,7 @@ var consoleLogger;
             //its not called directly called via showlog()
             //don't use any lib to manipulate the dom
             //since we want to create non dependent lib
-            if (this.showAsHtml) {
+            if (this.showAsHtml && mes) {
                 var msg;
                 var root = document.getElementsByTagName('body')[0];
                 var parentDiv = document.createElement('div');
@@ -251,20 +303,28 @@ var consoleLogger;
 
         logger.prototype.sendDataToService = function (logData) {
             //send data to remote server generic method using xhr
+            //this.sendData contains config =
             if (this.sendData && !this.sendData.isFramework) {
-                if (JSON) {
-                    var that = this;
-                    var xmlhttp = new XMLHttpRequest();
-                    xmlhttp.open("POST", this.sendData.url);
-                    xmlhttp.setRequestHeader("Content-Type", this.sendData.headers);
-                    xmlhttp.send(JSON.stringify(logData));
-                    xmlhttp.onreadystatechange = function () {
-                        if ((this.readyState != 4 || this.status != 200))
-                            that.handleError(1 /* ajaxError */, this.statusText);
-                    };
+                var that = this;
+                var xmlhttp = new XMLHttpRequest();
+                xmlhttp.open("POST", this.sendData.url);
+
+                var data;
+                if (consoleLogger.utilsClass.isFeaturePresent(1 /* json */)) {
+                    //try to send data as json
+                    xmlhttp.setRequestHeader("Content-Type", 'application/json; charset=utf-8');
+                    data = JSON.stringify(logData);
                 } else {
-                    this.handleError(0 /* jsonNotPresent */);
+                    //if json is not there then send data as form
+                    xmlhttp.setRequestHeader("Content-Type", 'application/x-www-form-urlencoded');
+                    data = 'message=' + logData.message + '&messageType=' + logData.messageType + '&eventDT=' + logData.eventDT + '&stack=' + logData.stack + '&browserDetails=' + logData.browserDetails;
                 }
+
+                xmlhttp.send(data);
+                xmlhttp.onreadystatechange = function () {
+                    if ((this.readyState != 4 || this.status != 200))
+                        that.handleError(1 /* ajaxError */, this.statusText);
+                };
             }
         };
 
@@ -278,12 +338,24 @@ var consoleLogger;
 
         logger.prototype.history = function () {
             //shows us the log history ,does not render as html
-            if (this.logHistory.length == 0) {
-                this.handleError(2 /* historyEmpty */);
+            if (consoleLogger.utilsClass.isFeaturePresent(0 /* sessionStorage */) && consoleLogger.utilsClass.isFeaturePresent(1 /* json */)) {
+                var tempHis = JSON.parse(window.sessionStorage['logHistory']);
+                if (tempHis.length == 0) {
+                    this.handleError(2 /* historyEmpty */);
+                } else {
+                    for (var idx in tempHis) {
+                        this.messageManager('Sr No:' + (parseInt(idx, 10) + 1).toString());
+                        this.showLog(tempHis[idx]);
+                    }
+                }
             } else {
-                for (var idx in this.logHistory) {
-                    this.messageManager('Sr No:' + (parseInt(idx, 10) + 1).toString());
-                    this.showLog(this.logHistory[idx]);
+                if (this.logHistory.length == 0) {
+                    this.handleError(2 /* historyEmpty */);
+                } else {
+                    for (var idx in this.logHistory) {
+                        this.messageManager('Sr No:' + (parseInt(idx, 10) + 1).toString());
+                        this.showLog(this.logHistory[idx]);
+                    }
                 }
             }
         };
@@ -383,11 +455,27 @@ var consoleLogger;
         loggerService.prototype.sendDataToService = function (logData) {
             //using the native $http service to send data
             var that = this;
+
+            var data;
+            var header;
+            if (consoleLogger.utilsClass.isFeaturePresent(1 /* json */)) {
+                //try to send data as json
+                header = 'application/json; charset=utf-8';
+                data = JSON.stringify(logData);
+            } else {
+                //if json is not there then send data as form
+                header = 'application/x-www-form-urlencoded';
+                data = 'message=' + logData.message + '&messageType=' + logData.messageType + '&eventDT=' + logData.eventDT + '&stack=' + logData.stack + '&browserDetails=' + logData.browserDetails;
+            }
+
             this.$http({
                 url: this.loggerVar.getConfig().url,
                 method: 'POST',
-                data: JSON.stringify(logData),
-                headers: this.loggerVar.getConfig().headers
+                data: data,
+                withCredentials: true,
+                headers: {
+                    'Content-Type': header
+                }
             }).then(function () {
                 //success
             }, function (d) {

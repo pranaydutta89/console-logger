@@ -9,7 +9,7 @@
 
 var app =angular.module('logTest',['consoleLogger']).run(function (loggerService) {
 
-    loggerService.config(true,true, {url: 'testUrlHere', toSend: 2})//fatal,error :1 , all:2
+    loggerService.config(true,true, {url:'http://localhost:8084/api/logData', toSend: 2})//fatal,error :1 , all:2
     loggerService.error('Error from run')
 
 });
