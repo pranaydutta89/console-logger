@@ -1,9 +1,9 @@
-Console-logger
+console-logger
 ==============
 
-Features: 
+Features 
 
-1) Simple console logging <br/>
+1) Simple browser console logging <br/>
 2) Show log data on your html page <br/>
 3) View log history  <br/>
 4) Central on/off facility   <br/>
@@ -22,7 +22,7 @@ Hidden Features:
 
 How to do ? 
 
-1) Init: 
+1) Init: Let's do some config
   
     var loggerObj = new consoleLogger.logger(); //by default its true 
     var loggerObj = new consoleLogger.logger(false); //if don't want to log   
@@ -33,9 +33,9 @@ How to do ?
     //second argument is for log as an html, default is false 
     
 
-2) Use: 
+2) Use: one liner's piece of cake !!
 
-  a) Debug
+  a) DEBUG
     
     loggerObj.debug('this is a debug log');//or
     loggerObj.debug(e) //e => error object
@@ -78,9 +78,9 @@ How to do ?
      *even if logging is false then also data will be sent to server
      */
 
-5)  Use As an AngularService  
+5)  Use As an Angularjs Service  
 
-   a) register the module dependency and do some configuration
+   a) Register the module dependency and do some configuration
    
     var app =angular.module('logTest',['consoleLogger']).run(function (loggerService) {
 
@@ -92,7 +92,7 @@ How to do ?
     });
     
     
-  b) use same as point 2 above inside controller or services 
+  b) Use same as point 2 above inside controller or services 
     
     app.controller('demoController',function($scope,loggerService){
     
@@ -107,11 +107,7 @@ How to do ?
  Browser compatibility: 
  
  IE 6+(6-7 don't have console but still you can send logs) <br/>
- Chrome-1 <br/>
- opera -1 <br/>
- firefox -1 <br/>
- safari -1
- 
+ All other browser's that support > ECMAscript 3. 
  
  Note:
  
