@@ -1,15 +1,23 @@
-console-logger
+Console-logger
 ==============
 
-Features 
+Features: 
 
 1) Simple console logging <br/>
 2) Show log data on your html page <br/>
 3) View log history  <br/>
 4) Central on/off facility   <br/>
 5) Send log data to remote server  <br/>
-6) Use as a Angularjs service <br/>
-7) No dependency to jQuery or any other library
+
+Hidden Features:
+
+1) Use as a Angularjs service <br/>
+2) No dependency to jQuery or any other library <br/>
+3) Uses localStorage of HTML5 if available <br/>
+4) Uses JSON and fallbacks to forms in old browsers <br/>
+5) CORS supported <br/>
+6) almost supported to every available browser <br/>
+
 
 
 How to do ? 
@@ -96,7 +104,7 @@ How to do ?
 
     
  
- Browser compatibility 
+ Browser compatibility: 
  
  IE 6+(6-7 don't have console but still you can send logs) <br/>
  Chrome-1 <br/>
@@ -105,6 +113,15 @@ How to do ?
  safari -1
  
  
- Dependency
+ Note:
  
-- IE6 to IE8 json2/json3.js (sorry can't help it.)
+- IE6 to IE8 json2/json3.js 
+(sorry can't help it. If it's not present then transport will fallback to form)
+
+
+<h2>Contribute</h2>
+
+- clone the repo
+- run npm install in bash or anywhere,to install the necessary node packages
+- to compile typeScript use 'gulp build'
+- to watch use 'gulp'
