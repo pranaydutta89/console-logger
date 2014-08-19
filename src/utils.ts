@@ -8,7 +8,8 @@ module consoleLogger.utils{
    export enum browserFeatureCheck{
         sessionStorage,
         json,
-        console
+        console,
+        msSaveBlob
     }
 
     export class utilities {
@@ -49,7 +50,16 @@ module consoleLogger.utils{
                       return true;
                     break;
 
+                case browserFeatureCheck.msSaveBlob:
+                    //check is blob saver is present in browser
+                    if(window.navigator.msSaveOrOpenBlob)
+                        return true;
+                    else
+                        return false;
+                    break;
                    }
+
+
             return false;
 
 

@@ -182,6 +182,16 @@ module consoleLogger{
 
         }
 
+        private downLoadLog(){
+
+
+                var blob = new Blob(['ddd'],{
+                    type: "text/csv;charset=utf-8;"
+                });
+                window.navigator.msSaveBlob(blob, 'check.csv');
+
+        }
+
         private showLogAsHtml(mes:logWrapperClass){
 
             //when we want to render log as HTML use this function
@@ -191,17 +201,24 @@ module consoleLogger{
             //don't use any lib to manipulate the dom
             //since we want to create non dependent lib
             if(this.showAsHtml && mes) {
-                var msg:string;
-                var root = document.getElementsByTagName('body')[0];
-                var parentDiv = document.createElement('div');
-                if (mes.messageType && mes.messageType !== logType.log)
-                    msg = '<div style="padding: 2%;text-align: center;font-family: "Bookman", Georgia, "Times New Roman", serif"><strong>Type:</strong>' + logType[mes.messageType] + '<br/><strong>Message:</strong>' + mes.message + '<br/><strong>Stack:</strong>' + mes.stack + '<br/><strong>Event Time:</strong>' + mes.eventDT + '<br/></div><br/>'
-                else
-                    msg = '<div style="padding: 2%;text-align: center;font-family: "Bookman", Georgia, "Times New Roman", serif"><strong>Type:</strong>Log<br/><strong>Message:</strong>' + mes.message + '</div><br/>';
 
-                parentDiv.innerHTML = msg;
-                root.appendChild(parentDiv);
+                if (mes.messageType && mes.messageType !== logType.log)
+                   this.createDom('<div style="padding: 2%;text-align: center;font-family: "Bookman", Georgia, "Times New Roman", serif"><strong>Type:</strong>' + logType[mes.messageType] + '<br/><strong>Message:</strong>' + mes.message + '<br/><strong>Stack:</strong>' + mes.stack + '<br/><strong>Event Time:</strong>' + mes.eventDT + '<br/></div><br/>');
+                else
+                    this.createDom('<div style="padding: 2%;text-align: center;font-family: "Bookman", Georgia, "Times New Roman", serif"><strong>Type:</strong>Log<br/><strong>Message:</strong>' + mes.message + '</div><br/>');
+
+
             }
+        }
+
+
+        private createDom(data:string){
+
+            //appending new dom elements to body
+            var root = document.getElementsByTagName('body')[0];
+            var parentDiv = document.createElement('div');
+            parentDiv.innerHTML = data;
+            root.appendChild(parentDiv);
         }
 
         //end private functions
@@ -352,8 +369,14 @@ module consoleLogger{
 
            //INIT
 
-            if(showAsHtml)
-            this.showAsHtml =showAsHtml;
+            if(showAsHtml) {
+                this.showAsHtml = showAsHtml;
+                //created a download log button
+                if(utilsClass.isFeaturePresent(utils.browserFeatureCheck.msSaveBlob))
+                this.createDom('<div style="text-align: center"><input type="button" value="Download Log" onclick="consoleLogger.downLoadLog()"/> </div>');
+                else
+                this.createDom('<label STYLE="text-align: center">Browser does not support BLOB</label>');
+            }
             this.logging = shouldLog;
             this.config(sendDataOptions);
 

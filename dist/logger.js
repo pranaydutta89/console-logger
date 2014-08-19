@@ -14,6 +14,7 @@ var consoleLogger;
             browserFeatureCheck[browserFeatureCheck["sessionStorage"] = 0] = "sessionStorage";
             browserFeatureCheck[browserFeatureCheck["json"] = 1] = "json";
             browserFeatureCheck[browserFeatureCheck["console"] = 2] = "console";
+            browserFeatureCheck[browserFeatureCheck["msSaveBlob"] = 3] = "msSaveBlob";
         })(utils.browserFeatureCheck || (utils.browserFeatureCheck = {}));
         var browserFeatureCheck = utils.browserFeatureCheck;
 
@@ -49,7 +50,16 @@ var consoleLogger;
                         if (typeof console != "undefined" || window.console)
                             return true;
                         break;
+
+                    case 3 /* msSaveBlob */:
+                        //check is blob saver is present in browser
+                        if (window.navigator.msSaveOrOpenBlob)
+                            return true;
+                        else
+                            return false;
+                        break;
                 }
+
                 return false;
             };
 
@@ -156,8 +166,15 @@ var consoleLogger;
                 return logData;
             };
             //INIT
-            if (showAsHtml)
+            if (showAsHtml) {
                 this.showAsHtml = showAsHtml;
+
+                //created a download log button
+                if (consoleLogger.utilsClass.isFeaturePresent(3 /* msSaveBlob */))
+                    this.createDom('<div style="text-align: center"><input type="button" value="Download Log" onclick="consoleLogger.downLoadLog()"/> </div>');
+                else
+                    this.createDom('<label>Browser does not support BLOB</label>');
+            }
             this.logging = shouldLog;
             this.config(sendDataOptions);
         }
@@ -256,23 +273,32 @@ var consoleLogger;
             }
         };
 
+        logger.prototype.downLoadLog = function () {
+            var blob = new Blob(['ddd'], {
+                type: "text/csv;charset=utf-8;"
+            });
+            window.navigator.msSaveBlob(blob, 'check.csv');
+        };
+
         logger.prototype.showLogAsHtml = function (mes) {
             //when we want to render log as HTML use this function
             //its not called directly called via showlog()
             //don't use any lib to manipulate the dom
             //since we want to create non dependent lib
             if (this.showAsHtml && mes) {
-                var msg;
-                var root = document.getElementsByTagName('body')[0];
-                var parentDiv = document.createElement('div');
                 if (mes.messageType && mes.messageType !== 5 /* log */)
-                    msg = '<div style="padding: 2%;text-align: center;font-family: "Bookman", Georgia, "Times New Roman", serif"><strong>Type:</strong>' + logType[mes.messageType] + '<br/><strong>Message:</strong>' + mes.message + '<br/><strong>Stack:</strong>' + mes.stack + '<br/><strong>Event Time:</strong>' + mes.eventDT + '<br/></div><br/>';
+                    this.createDom('<div style="padding: 2%;text-align: center;font-family: "Bookman", Georgia, "Times New Roman", serif"><strong>Type:</strong>' + logType[mes.messageType] + '<br/><strong>Message:</strong>' + mes.message + '<br/><strong>Stack:</strong>' + mes.stack + '<br/><strong>Event Time:</strong>' + mes.eventDT + '<br/></div><br/>');
                 else
-                    msg = '<div style="padding: 2%;text-align: center;font-family: "Bookman", Georgia, "Times New Roman", serif"><strong>Type:</strong>Log<br/><strong>Message:</strong>' + mes.message + '</div><br/>';
-
-                parentDiv.innerHTML = msg;
-                root.appendChild(parentDiv);
+                    this.createDom('<div style="padding: 2%;text-align: center;font-family: "Bookman", Georgia, "Times New Roman", serif"><strong>Type:</strong>Log<br/><strong>Message:</strong>' + mes.message + '</div><br/>');
             }
+        };
+
+        logger.prototype.createDom = function (data) {
+            //appending new dom elements to body
+            var root = document.getElementsByTagName('body')[0];
+            var parentDiv = document.createElement('div');
+            parentDiv.innerHTML = data;
+            root.appendChild(parentDiv);
         };
 
         //end private functions
