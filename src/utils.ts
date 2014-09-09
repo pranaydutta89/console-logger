@@ -3,29 +3,20 @@
  *
  * utilities function will be here which are different from core library
  */
+
 module consoleLogger.utils{
 
    export enum browserFeatureCheck{
         sessionStorage,
         json,
         console,
-        msSaveBlob
+        canDownloadLog,
+       canUseSessionStorage
     }
 
     export class utilities {
 
-        private ieVersion():number{
-            var v = 3,
-                div = document.createElement('div'),
-                all = div.getElementsByTagName('i');
 
-            while (
-                div.innerHTML = '<!--[if gt IE ' + (++v) + ']><i></i>< ![endif]-->',
-                    all[0]
-                );
-
-            return v > 4 ? v : undefined;
-        }
 
 
         public isFeaturePresent(feature:browserFeatureCheck):boolean{
@@ -50,13 +41,13 @@ module consoleLogger.utils{
                       return true;
                     break;
 
-                case browserFeatureCheck.msSaveBlob:
+                case browserFeatureCheck.canDownloadLog:
                     //check is blob saver is present in browser
-                    if(window.navigator.msSaveOrOpenBlob)
-                        return true;
-                    else
-                        return false;
-                    break;
+                    return  window.sessionStorage && typeof sessionStorage !="undefined" && typeof JSON !="undefined"&& window.saveAs
+
+                case browserFeatureCheck.canUseSessionStorage:
+                     return window.sessionStorage && typeof sessionStorage !="undefined" && typeof JSON !="undefined"
+
                    }
 
 

@@ -2,34 +2,26 @@
 * Created by prandutt on 8/6/2014.
 * contract which each logger service have to expose
 */
+/**
+* Created by prandutt on 8/8/2014.
+*
+* utilities function will be here which are different from core library
+*/
 var consoleLogger;
 (function (consoleLogger) {
-    /**
-    * Created by prandutt on 8/8/2014.
-    *
-    * utilities function will be here which are different from core library
-    */
     (function (utils) {
         (function (browserFeatureCheck) {
             browserFeatureCheck[browserFeatureCheck["sessionStorage"] = 0] = "sessionStorage";
             browserFeatureCheck[browserFeatureCheck["json"] = 1] = "json";
             browserFeatureCheck[browserFeatureCheck["console"] = 2] = "console";
-            browserFeatureCheck[browserFeatureCheck["msSaveBlob"] = 3] = "msSaveBlob";
+            browserFeatureCheck[browserFeatureCheck["canDownloadLog"] = 3] = "canDownloadLog";
+            browserFeatureCheck[browserFeatureCheck["canUseSessionStorage"] = 4] = "canUseSessionStorage";
         })(utils.browserFeatureCheck || (utils.browserFeatureCheck = {}));
         var browserFeatureCheck = utils.browserFeatureCheck;
 
         var utilities = (function () {
             function utilities() {
             }
-            utilities.prototype.ieVersion = function () {
-                var v = 3, div = document.createElement('div'), all = div.getElementsByTagName('i');
-
-                while (div.innerHTML = '<!--[if gt IE ' + (++v) + ']><i></i>< ![endif]-->', all[0])
-                    ;
-
-                return v > 4 ? v : undefined;
-            };
-
             utilities.prototype.isFeaturePresent = function (feature) {
                 switch (feature) {
                     case 0 /* sessionStorage */:
@@ -51,13 +43,12 @@ var consoleLogger;
                             return true;
                         break;
 
-                    case 3 /* msSaveBlob */:
+                    case 3 /* canDownloadLog */:
                         //check is blob saver is present in browser
-                        if (window.navigator.msSaveOrOpenBlob)
-                            return true;
-                        else
-                            return false;
-                        break;
+                        return window.sessionStorage && typeof sessionStorage != "undefined" && typeof JSON != "undefined" && window.saveAs;
+
+                    case 4 /* canUseSessionStorage */:
+                        return window.sessionStorage && typeof sessionStorage != "undefined" && typeof JSON != "undefined";
                 }
 
                 return false;
@@ -170,10 +161,10 @@ var consoleLogger;
                 this.showAsHtml = showAsHtml;
 
                 //created a download log button
-                if (consoleLogger.utilsClass.isFeaturePresent(3 /* msSaveBlob */))
-                    this.createDom('<div style="text-align: center"><input type="button" value="Download Log" onclick="consoleLogger.downLoadLog()"/> </div>');
+                if (consoleLogger.utilsClass.isFeaturePresent(3 /* canDownloadLog */))
+                    this.createDom('<div style="text-align: center"><input type="button" value="Download Log" onclick="consoleLogger.logger.downLoadLog()"/> </div>');
                 else
-                    this.createDom('<label>Browser does not support BLOB</label>');
+                    this.createDom('<label STYLE="text-align: center">Browser does not support BLOB</label>');
             }
             this.logging = shouldLog;
             this.config(sendDataOptions);
@@ -196,7 +187,7 @@ var consoleLogger;
 
         logger.prototype.pushHistoryData = function (logWrapperObj) {
             //use session storage to store and retrieve data if not present then fall back
-            if (consoleLogger.utilsClass.isFeaturePresent(0 /* sessionStorage */) && consoleLogger.utilsClass.isFeaturePresent(1 /* json */)) {
+            if (consoleLogger.utilsClass.isFeaturePresent(4 /* canUseSessionStorage */)) {
                 var tempHisArr = [];
                 if (window.sessionStorage['logHistory'])
                     tempHisArr = JSON.parse(window.sessionStorage['logHistory']);
@@ -273,11 +264,28 @@ var consoleLogger;
             }
         };
 
-        logger.prototype.downLoadLog = function () {
-            var blob = new Blob(['ddd'], {
+        logger.downLoadLog = function () {
+            var tempHis = JSON.parse(window.sessionStorage['logHistory']);
+            var downloadData = '';
+            if (tempHis.length == 0) {
+                //no logs yet
+                downloadData = 'No logs generated yet.';
+            } else {
+                for (var idx in tempHis) {
+                    var tempLogWrapper = tempHis[idx];
+                    downloadData = downloadData + 'SR No:' + (parseInt(idx, 10) + 1).toString() + ',';
+                    downloadData = downloadData + logType[tempLogWrapper.messageType] + ',';
+                    downloadData = downloadData + tempLogWrapper.message + ',';
+                    downloadData = downloadData + tempLogWrapper.stack + ',';
+                    downloadData = downloadData + tempLogWrapper.eventDT + ',';
+                    downloadData = downloadData + '\r';
+                }
+            }
+
+            var blob = new Blob([downloadData], {
                 type: "text/csv;charset=utf-8;"
             });
-            window.navigator.msSaveBlob(blob, 'check.csv');
+            window.saveAs(blob, 'consoleLogs-' + new Date() + '.csv');
         };
 
         logger.prototype.showLogAsHtml = function (mes) {
@@ -364,7 +372,7 @@ var consoleLogger;
 
         logger.prototype.history = function () {
             //shows us the log history ,does not render as html
-            if (consoleLogger.utilsClass.isFeaturePresent(0 /* sessionStorage */) && consoleLogger.utilsClass.isFeaturePresent(1 /* json */)) {
+            if (consoleLogger.utilsClass.isFeaturePresent(4 /* canUseSessionStorage */)) {
                 var tempHis = JSON.parse(window.sessionStorage['logHistory']);
                 if (tempHis.length == 0) {
                     this.handleError(2 /* historyEmpty */);
