@@ -413,8 +413,9 @@ var consoleLogger;
         }
     }();
     var loggerService = (function () {
-        function loggerService($http) {
+        function loggerService($http, $q) {
             this.$http = $http;
+            this.$q = $q;
             this.isConfigDone = false;
         }
         //Private function's
@@ -436,43 +437,72 @@ var consoleLogger;
         loggerService.prototype.error = function (message) {
             //implementing the interface and its function
             //call the native logger.ts function only
+            var def = this.$q.defer();
             if (this.isConfigDone) {
                 //config done
-                this.sendDataToService(this.loggerVar.error(message));
+                this.sendDataToService(this.loggerVar.error(message)).then(function () {
+                    def.resolve();
+                }, function () {
+                    def.reject();
+                });
             } else {
                 //initial config not done
                 this.configNotDone();
+                def.reject();
             }
+
+            return def.promise;
         };
 
         loggerService.prototype.debug = function (message) {
+            var def = this.$q.defer();
             if (this.isConfigDone) {
                 //config done
-                this.sendDataToService(this.loggerVar.debug(message));
+                this.sendDataToService(this.loggerVar.debug(message)).then(function () {
+                    def.resolve();
+                }, function () {
+                    def.reject();
+                });
             } else {
                 //initial config not done
                 this.configNotDone();
+                def.reject();
             }
+            return def.promise;
         };
 
         loggerService.prototype.fatal = function (message) {
+            var def = this.$q.defer();
             if (this.isConfigDone) {
                 //config done
-                this.sendDataToService(this.loggerVar.fatal(message));
+                this.sendDataToService(this.loggerVar.fatal(message)).then(function () {
+                    def.resolve();
+                }, function () {
+                    def.reject();
+                });
             } else {
                 //initial config not done
                 this.configNotDone();
+                def.reject();
             }
+            return def.promise;
         };
 
         loggerService.prototype.warn = function (message) {
+            var def = this.$q.defer();
             if (this.isConfigDone) {
                 //config done
-                this.sendDataToService(this.loggerVar.warn(message));
+                this.sendDataToService(this.loggerVar.warn(message)).then(function () {
+                    def.resolve();
+                }, function () {
+                    def.reject();
+                });
             } else {
                 //initial config not done
                 this.configNotDone();
+                def.reject();
             }
+            return def.promise;
         };
 
         loggerService.prototype.history = function () {
@@ -501,7 +531,7 @@ var consoleLogger;
                 data = 'message=' + logData.message + '&messageType=' + logData.messageType + '&eventDT=' + logData.eventDT + '&stack=' + logData.stack + '&browserDetails=' + logData.browserDetails;
             }
 
-            this.$http({
+            return this.$http({
                 url: this.loggerVar.getConfig().url,
                 method: 'POST',
                 data: data,
@@ -509,15 +539,10 @@ var consoleLogger;
                 headers: {
                     'Content-Type': header
                 }
-            }).then(function () {
-                //success
-            }, function (d) {
-                //error
-                that.loggerVar.handleError(1 /* ajaxError */, d.statusText);
             });
         };
 
-        loggerService.$inject = ['$http'];
+        loggerService.$inject = ['$http', '$q'];
         return loggerService;
     })();
     consoleLogger.loggerService = loggerService;

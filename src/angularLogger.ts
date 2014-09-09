@@ -45,55 +45,89 @@ module consoleLogger {
 
             //implementing the interface and its function
             //call the native logger.ts function only
+            var def =this.$q.defer();
            if(this.isConfigDone){
                //config done
-               this.sendDataToService(this.loggerVar.error(message));
+               this.sendDataToService(this.loggerVar.error(message)).then(()=>{
+                   def.resolve();
+               },()=>{
+                   def.reject();
+               });
 
            }
            else{
                //initial config not done
                 this.configNotDone();
+               def.reject();
            }
+
+            return def.promise;
 
         }
 
         public debug(message:any){
+            var def =this.$q.defer();
             if(this.isConfigDone){
                 //config done
-                this.sendDataToService(this.loggerVar.debug(message));
+                this.sendDataToService(this.loggerVar.debug(message)).then(()=>{
+
+                    def.resolve();
+                },()=>{
+
+                    def.reject();
+                });
 
             }
             else{
                 //initial config not done
                 this.configNotDone();
+                def.reject();
             }
+            return def.promise;
 
         }
 
         public fatal(message:any){
+
+            var def =this.$q.defer();
             if(this.isConfigDone){
                 //config done
-                this.sendDataToService(this.loggerVar.fatal(message));
+                this.sendDataToService(this.loggerVar.fatal(message)).then(()=>{
+
+                    def.resolve();
+                },()=>{
+                    def.reject();
+                });
 
             }
             else{
                 //initial config not done
                 this.configNotDone();
+                def.reject();
             }
-
+              return def.promise;
         }
 
         public warn(message:any){
+
+            var def =this.$q.defer();
             if(this.isConfigDone){
                 //config done
-                this.sendDataToService(this.loggerVar.warn(message));
+                this.sendDataToService(this.loggerVar.warn(message)).then(()=>{
+
+                    def.resolve();
+                },()=>{
+
+                    def.reject();
+                });
 
             }
             else{
                 //initial config not done
                 this.configNotDone();
+                def.reject();
             }
-
+              return def.promise;
         }
 
         public history(){
@@ -126,7 +160,7 @@ module consoleLogger {
                  data ='message='+logData.message+'&messageType='+logData.messageType+'&eventDT='+logData.eventDT+'&stack='+logData.stack+'&browserDetails='+logData.browserDetails
              }
 
-            this.$http({
+             return this.$http({
                 url:this.loggerVar.getConfig().url,
                 method: 'POST',
                 data:data,
@@ -134,20 +168,15 @@ module consoleLogger {
                 headers: {
                     'Content-Type':header
                 }
-            }).then(function(){
-                //success
-            },function(d){
-                //error
-                that.loggerVar.handleError(consoleLogger.errorType.ajaxError,d.statusText);
             });
         }
        //End Public Function's
 
 
         //for minification purpose using inject
-        static $inject = ['$http'];
+        static $inject = ['$http','$q'];
 
-        constructor(public $http) {
+        constructor(public $http:ng.IHttpService,public $q) {
 
         }
     }

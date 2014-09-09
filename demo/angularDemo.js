@@ -28,7 +28,11 @@ app.controller('demoController',function($scope,loggerService){
     try{
         throw new Error('debug error with stack');
     }catch(e){
-        loggerService.error(e)
+        loggerService.error(e).then(function(){
+
+        },function(){
+
+        });
 
     }
 
