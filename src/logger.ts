@@ -387,15 +387,25 @@ module consoleLogger{
 
            //INIT
 
-            if(showAsHtml) {
-                this.showAsHtml = showAsHtml;
+            if(showAsHtml === true || showAsHtml.toString().toLowerCase()==='on')
+                this.showAsHtml = true;
+
+
+            if(this.showAsHtml){
+
                 //created a download log button
                 if(utilsClass.isFeaturePresent(utils.browserFeatureCheck.canDownloadLog))
                 this.createDom('<div style="text-align: center"><input type="button" value="Download Log" onclick="consoleLogger.logger.downLoadLog()"/> </div>');
                 else
-                this.createDom('<label STYLE="text-align: center">Browser does not support BLOB</label>');
+                this.createDom('<div style="text-align: center"><strong>You are missing reference of filesaver.js or your browser doesnt support this feature</strong></div>');
             }
-            this.logging = shouldLog;
+
+
+            if(shouldLog === true || shouldLog.toString().toLowerCase() ==='on')
+            this.logging =true;
+            else
+            this.logging=false;
+
             this.config(sendDataOptions);
 
         }

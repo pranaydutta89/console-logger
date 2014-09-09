@@ -26,22 +26,15 @@ var consoleLogger;
                 switch (feature) {
                     case 0 /* sessionStorage */:
                         //check if session storage is present in browser
-                        if (window.sessionStorage && typeof sessionStorage != "undefined")
-                            return true;
-                        break;
+                        return window.sessionStorage && typeof sessionStorage != "undefined";
 
                     case 1 /* json */:
                         //json is present or not
-                        if (typeof JSON != "undefined")
-                            return true;
-
-                        break;
+                        return typeof JSON != "undefined";
 
                     case 2 /* console */:
                         //browser console is there or not
-                        if (typeof console != "undefined" || window.console)
-                            return true;
-                        break;
+                        return (typeof console != "undefined" || window.console) ? true : false;
 
                     case 3 /* canDownloadLog */:
                         //check is blob saver is present in browser
@@ -157,16 +150,22 @@ var consoleLogger;
                 return logData;
             };
             //INIT
-            if (showAsHtml) {
-                this.showAsHtml = showAsHtml;
+            if (showAsHtml === true || showAsHtml.toString().toLowerCase() === 'on')
+                this.showAsHtml = true;
 
+            if (this.showAsHtml) {
                 //created a download log button
                 if (consoleLogger.utilsClass.isFeaturePresent(3 /* canDownloadLog */))
                     this.createDom('<div style="text-align: center"><input type="button" value="Download Log" onclick="consoleLogger.logger.downLoadLog()"/> </div>');
                 else
-                    this.createDom('<label STYLE="text-align: center">Browser does not support BLOB</label>');
+                    this.createDom('<div style="text-align: center"><strong>You are missing reference of filesaver.js or your browser doesnt support this feature</strong></div>');
             }
-            this.logging = shouldLog;
+
+            if (shouldLog === true || shouldLog.toString().toLowerCase() === 'on')
+                this.logging = true;
+            else
+                this.logging = false;
+
             this.config(sendDataOptions);
         }
         //private functions
