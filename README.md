@@ -8,6 +8,7 @@ Features
 3) View log history  <br/>
 4) Central on/off facility   <br/>
 5) Send log data to remote server  <br/>
+6) Export data in csv format (only for supported browser's)
 
 Hidden Features:
 
@@ -25,45 +26,52 @@ How to do ?
 1) Init: Let's do some config
   
     var loggerObj = new consoleLogger.logger(); //by default its true 
-    var loggerObj = new consoleLogger.logger(false); //if don't want to log   
+    
+    var loggerObj = new consoleLogger.logger(false); //if don't want to log (eg: in prod)
+    
     
     //if you want to log as an html
     
     var loggerObj = new consoleLogger.logger(true,true);
     //second argument is for log as an html, default is false 
     
+    /*Note: you can use "on/off" in place of true/false*/
 
 2) Use: one liner's piece of cake !!
 
   a) DEBUG
     
-    loggerObj.debug('this is a debug log');//or
-    loggerObj.debug(e) //e => error object
+    loggerObj.debug('this is a debug log');
+    //or
+    loggerObj.debug(e); //e => error object
  
   
   b) FATAL
   
-    loggerObj.fatal('this is a fatal log');//or
-    loggerObj.fatal(e) //e => error object
+    loggerObj.fatal('this is a fatal log');
+    //or
+    loggerObj.fatal(e); //e => error object
  
   
   a) ERROR
  
-    loggerObj.error('this is a error log');//or
-    loggerObj.error(e) //e => error object
+    loggerObj.error('this is a error log');
+    //or
+    loggerObj.error(e); //e => error object
   
   
   a) WARN
  
-     loggerObj.warn('this is a warn log');//or
-     loggerObj.warn(e) //e => error object
+     loggerObj.warn('this is a warn log');
+     //or
+     loggerObj.warn(e); //e => error object
  
   
 3) View log history:  
 
-    loggerObj.history()
+    loggerObj.history();
   
-4) Send Data to server: 
+4) Send Data to server (config): 
 
 
     //configure your logger object
@@ -102,12 +110,16 @@ How to do ?
     
     });
 
-    
- 
+6) Export data in csv format:
+
+   a) If your log as html is true than you can export the log data to client machine in .csv format
+   b) To use export feature you need to include filesaver.js to your project
+   c) IE >=10, chrome-1 ,firefox -1 , safari -1 ,opera -1 are supported
+   
  Browser compatibility: 
  
  IE 6+(6-7 don't have console but still you can send logs) <br/>
- All other browser's that support > ECMAscript 3. 
+ All other browser's that support >= ECMAScript 3. 
  
  Note:
  

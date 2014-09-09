@@ -2,54 +2,48 @@
 * Created by prandutt on 8/6/2014.
 * contract which each logger service have to expose
 */
+/**
+* Created by prandutt on 8/8/2014.
+*
+* utilities function will be here which are different from core library
+*/
 var consoleLogger;
 (function (consoleLogger) {
-    /**
-    * Created by prandutt on 8/8/2014.
-    *
-    * utilities function will be here which are different from core library
-    */
     (function (utils) {
         (function (browserFeatureCheck) {
             browserFeatureCheck[browserFeatureCheck["sessionStorage"] = 0] = "sessionStorage";
             browserFeatureCheck[browserFeatureCheck["json"] = 1] = "json";
             browserFeatureCheck[browserFeatureCheck["console"] = 2] = "console";
+            browserFeatureCheck[browserFeatureCheck["canDownloadLog"] = 3] = "canDownloadLog";
+            browserFeatureCheck[browserFeatureCheck["canUseSessionStorage"] = 4] = "canUseSessionStorage";
         })(utils.browserFeatureCheck || (utils.browserFeatureCheck = {}));
         var browserFeatureCheck = utils.browserFeatureCheck;
 
         var utilities = (function () {
             function utilities() {
             }
-            utilities.prototype.ieVersion = function () {
-                var v = 3, div = document.createElement('div'), all = div.getElementsByTagName('i');
-
-                while (div.innerHTML = '<!--[if gt IE ' + (++v) + ']><i></i>< ![endif]-->', all[0])
-                    ;
-
-                return v > 4 ? v : undefined;
-            };
-
             utilities.prototype.isFeaturePresent = function (feature) {
                 switch (feature) {
                     case 0 /* sessionStorage */:
                         //check if session storage is present in browser
-                        if (window.sessionStorage && typeof sessionStorage != "undefined")
-                            return true;
-                        break;
+                        return window.sessionStorage && typeof sessionStorage != "undefined";
 
                     case 1 /* json */:
                         //json is present or not
-                        if (typeof JSON != "undefined")
-                            return true;
-
-                        break;
+                        return typeof JSON != "undefined";
 
                     case 2 /* console */:
                         //browser console is there or not
-                        if (typeof console != "undefined" || window.console)
-                            return true;
-                        break;
+                        return (typeof console != "undefined" || window.console) ? true : false;
+
+                    case 3 /* canDownloadLog */:
+                        //check is blob saver is present in browser
+                        return window.sessionStorage && typeof sessionStorage != "undefined" && typeof JSON != "undefined" && window.saveAs;
+
+                    case 4 /* canUseSessionStorage */:
+                        return window.sessionStorage && typeof sessionStorage != "undefined" && typeof JSON != "undefined";
                 }
+
                 return false;
             };
 
@@ -156,9 +150,22 @@ var consoleLogger;
                 return logData;
             };
             //INIT
-            if (showAsHtml)
-                this.showAsHtml = showAsHtml;
-            this.logging = shouldLog;
+            if (showAsHtml === true || showAsHtml.toString().toLowerCase() === 'on')
+                this.showAsHtml = true;
+
+            if (this.showAsHtml) {
+                //created a download log button
+                if (consoleLogger.utilsClass.isFeaturePresent(3 /* canDownloadLog */))
+                    this.createDom('<div style="text-align: center"><input type="button" value="Download Log" onclick="consoleLogger.logger.downLoadLog()"/> </div>');
+                else
+                    this.createDom('<div style="text-align: center"><strong>You are missing reference of filesaver.js or your browser doesnt support this feature</strong></div>');
+            }
+
+            if (shouldLog === true || shouldLog.toString().toLowerCase() === 'on')
+                this.logging = true;
+            else
+                this.logging = false;
+
             this.config(sendDataOptions);
         }
         //private functions
@@ -179,7 +186,7 @@ var consoleLogger;
 
         logger.prototype.pushHistoryData = function (logWrapperObj) {
             //use session storage to store and retrieve data if not present then fall back
-            if (consoleLogger.utilsClass.isFeaturePresent(0 /* sessionStorage */) && consoleLogger.utilsClass.isFeaturePresent(1 /* json */)) {
+            if (consoleLogger.utilsClass.isFeaturePresent(4 /* canUseSessionStorage */)) {
                 var tempHisArr = [];
                 if (window.sessionStorage['logHistory'])
                     tempHisArr = JSON.parse(window.sessionStorage['logHistory']);
@@ -256,23 +263,49 @@ var consoleLogger;
             }
         };
 
+        logger.downLoadLog = function () {
+            var tempHis = JSON.parse(window.sessionStorage['logHistory']);
+            var downloadData = '';
+            if (tempHis.length == 0) {
+                //no logs yet
+                downloadData = 'No logs generated yet.';
+            } else {
+                for (var idx in tempHis) {
+                    var tempLogWrapper = tempHis[idx];
+                    downloadData = downloadData + 'SR No:' + (parseInt(idx, 10) + 1).toString() + ',';
+                    downloadData = downloadData + logType[tempLogWrapper.messageType] + ',';
+                    downloadData = downloadData + tempLogWrapper.message + ',';
+                    downloadData = downloadData + tempLogWrapper.stack + ',';
+                    downloadData = downloadData + tempLogWrapper.eventDT + ',';
+                    downloadData = downloadData + '\r';
+                }
+            }
+
+            var blob = new Blob([downloadData], {
+                type: "text/csv;charset=utf-8;"
+            });
+            window.saveAs(blob, 'consoleLogs-' + new Date() + '.csv');
+        };
+
         logger.prototype.showLogAsHtml = function (mes) {
             //when we want to render log as HTML use this function
             //its not called directly called via showlog()
             //don't use any lib to manipulate the dom
             //since we want to create non dependent lib
             if (this.showAsHtml && mes) {
-                var msg;
-                var root = document.getElementsByTagName('body')[0];
-                var parentDiv = document.createElement('div');
                 if (mes.messageType && mes.messageType !== 5 /* log */)
-                    msg = '<div style="padding: 2%;text-align: center;font-family: "Bookman", Georgia, "Times New Roman", serif"><strong>Type:</strong>' + logType[mes.messageType] + '<br/><strong>Message:</strong>' + mes.message + '<br/><strong>Stack:</strong>' + mes.stack + '<br/><strong>Event Time:</strong>' + mes.eventDT + '<br/></div><br/>';
+                    this.createDom('<div style="padding: 2%;text-align: center;font-family: "Bookman", Georgia, "Times New Roman", serif"><strong>Type:</strong>' + logType[mes.messageType] + '<br/><strong>Message:</strong>' + mes.message + '<br/><strong>Stack:</strong>' + mes.stack + '<br/><strong>Event Time:</strong>' + mes.eventDT + '<br/></div><br/>');
                 else
-                    msg = '<div style="padding: 2%;text-align: center;font-family: "Bookman", Georgia, "Times New Roman", serif"><strong>Type:</strong>Log<br/><strong>Message:</strong>' + mes.message + '</div><br/>';
-
-                parentDiv.innerHTML = msg;
-                root.appendChild(parentDiv);
+                    this.createDom('<div style="padding: 2%;text-align: center;font-family: "Bookman", Georgia, "Times New Roman", serif"><strong>Type:</strong>Log<br/><strong>Message:</strong>' + mes.message + '</div><br/>');
             }
+        };
+
+        logger.prototype.createDom = function (data) {
+            //appending new dom elements to body
+            var root = document.getElementsByTagName('body')[0];
+            var parentDiv = document.createElement('div');
+            parentDiv.innerHTML = data;
+            root.appendChild(parentDiv);
         };
 
         //end private functions
@@ -338,7 +371,7 @@ var consoleLogger;
 
         logger.prototype.history = function () {
             //shows us the log history ,does not render as html
-            if (consoleLogger.utilsClass.isFeaturePresent(0 /* sessionStorage */) && consoleLogger.utilsClass.isFeaturePresent(1 /* json */)) {
+            if (consoleLogger.utilsClass.isFeaturePresent(4 /* canUseSessionStorage */)) {
                 var tempHis = JSON.parse(window.sessionStorage['logHistory']);
                 if (tempHis.length == 0) {
                     this.handleError(2 /* historyEmpty */);
@@ -380,8 +413,9 @@ var consoleLogger;
         }
     }();
     var loggerService = (function () {
-        function loggerService($http) {
+        function loggerService($http, $q) {
             this.$http = $http;
+            this.$q = $q;
             this.isConfigDone = false;
         }
         //Private function's
@@ -403,43 +437,72 @@ var consoleLogger;
         loggerService.prototype.error = function (message) {
             //implementing the interface and its function
             //call the native logger.ts function only
+            var def = this.$q.defer();
             if (this.isConfigDone) {
                 //config done
-                this.sendDataToService(this.loggerVar.error(message));
+                this.sendDataToService(this.loggerVar.error(message)).then(function () {
+                    def.resolve();
+                }, function () {
+                    def.reject();
+                });
             } else {
                 //initial config not done
                 this.configNotDone();
+                def.reject();
             }
+
+            return def.promise;
         };
 
         loggerService.prototype.debug = function (message) {
+            var def = this.$q.defer();
             if (this.isConfigDone) {
                 //config done
-                this.sendDataToService(this.loggerVar.debug(message));
+                this.sendDataToService(this.loggerVar.debug(message)).then(function () {
+                    def.resolve();
+                }, function () {
+                    def.reject();
+                });
             } else {
                 //initial config not done
                 this.configNotDone();
+                def.reject();
             }
+            return def.promise;
         };
 
         loggerService.prototype.fatal = function (message) {
+            var def = this.$q.defer();
             if (this.isConfigDone) {
                 //config done
-                this.sendDataToService(this.loggerVar.fatal(message));
+                this.sendDataToService(this.loggerVar.fatal(message)).then(function () {
+                    def.resolve();
+                }, function () {
+                    def.reject();
+                });
             } else {
                 //initial config not done
                 this.configNotDone();
+                def.reject();
             }
+            return def.promise;
         };
 
         loggerService.prototype.warn = function (message) {
+            var def = this.$q.defer();
             if (this.isConfigDone) {
                 //config done
-                this.sendDataToService(this.loggerVar.warn(message));
+                this.sendDataToService(this.loggerVar.warn(message)).then(function () {
+                    def.resolve();
+                }, function () {
+                    def.reject();
+                });
             } else {
                 //initial config not done
                 this.configNotDone();
+                def.reject();
             }
+            return def.promise;
         };
 
         loggerService.prototype.history = function () {
@@ -468,7 +531,7 @@ var consoleLogger;
                 data = 'message=' + logData.message + '&messageType=' + logData.messageType + '&eventDT=' + logData.eventDT + '&stack=' + logData.stack + '&browserDetails=' + logData.browserDetails;
             }
 
-            this.$http({
+            return this.$http({
                 url: this.loggerVar.getConfig().url,
                 method: 'POST',
                 data: data,
@@ -476,15 +539,10 @@ var consoleLogger;
                 headers: {
                     'Content-Type': header
                 }
-            }).then(function () {
-                //success
-            }, function (d) {
-                //error
-                that.loggerVar.handleError(1 /* ajaxError */, d.statusText);
             });
         };
 
-        loggerService.$inject = ['$http'];
+        loggerService.$inject = ['$http', '$q'];
         return loggerService;
     })();
     consoleLogger.loggerService = loggerService;

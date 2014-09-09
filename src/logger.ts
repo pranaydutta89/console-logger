@@ -10,6 +10,7 @@
 /// <reference path="../dependencies/jquery.d.ts"/>
 /// <reference path="interface.ts"/>
 /// <reference path="utils.ts"/>
+
 module consoleLogger{
    export var  utilsClass:consoleLogger.utils.utilities = new consoleLogger.utils.utilities();
     import utils =consoleLogger.utils;
@@ -75,7 +76,7 @@ module consoleLogger{
            //all the config part will be done here
 
             if (sendDataOptions) {
-                this.sendData =new sendDataSettings()
+                this.sendData =new sendDataSettings();
                 if(sendDataOptions.toSend)
                     this.sendData.toSend = sendDataOptions.toSend;
 
@@ -90,8 +91,7 @@ module consoleLogger{
 
         private pushHistoryData(logWrapperObj:logWrapperClass){
             //use session storage to store and retrieve data if not present then fall back
-            if(utilsClass.isFeaturePresent(utils.browserFeatureCheck.sessionStorage) &&
-                utilsClass.isFeaturePresent(utils.browserFeatureCheck.json)){
+            if(utilsClass.isFeaturePresent(utils.browserFeatureCheck.canUseSessionStorage)){
                 var tempHisArr:Array<logWrapperClass> =[];
                 if(window.sessionStorage['logHistory'])
                     tempHisArr =JSON.parse(window.sessionStorage['logHistory']);
@@ -182,6 +182,35 @@ module consoleLogger{
 
         }
 
+        public static downLoadLog(){
+
+
+                var tempHis:Array<logWrapperClass> = JSON.parse(window.sessionStorage['logHistory']);
+                var downloadData:string='';
+                if(tempHis.length ==0){
+                   //no logs yet
+                    downloadData ='No logs generated yet.'
+                }
+                else {
+                    for (var idx in tempHis) {
+
+                        var tempLogWrapper:logWrapperClass =tempHis[idx];
+                        downloadData = downloadData+ 'SR No:'+ (parseInt(idx,10)+1).toString()+',';
+                        downloadData =downloadData + logType[tempLogWrapper.messageType]+',';
+                        downloadData =downloadData + tempLogWrapper.message +',';
+                        downloadData =downloadData + tempLogWrapper.stack+',';
+                        downloadData =downloadData + tempLogWrapper.eventDT +',';
+                        downloadData =downloadData + '\r'
+                    }
+                }
+
+                var blob = new Blob([downloadData],{
+                    type: "text/csv;charset=utf-8;"
+                });
+                 window.saveAs(blob,'consoleLogs-'+ new Date() +'.csv');
+
+        }
+
         private showLogAsHtml(mes:logWrapperClass){
 
             //when we want to render log as HTML use this function
@@ -191,17 +220,24 @@ module consoleLogger{
             //don't use any lib to manipulate the dom
             //since we want to create non dependent lib
             if(this.showAsHtml && mes) {
-                var msg:string;
-                var root = document.getElementsByTagName('body')[0];
-                var parentDiv = document.createElement('div');
-                if (mes.messageType && mes.messageType !== logType.log)
-                    msg = '<div style="padding: 2%;text-align: center;font-family: "Bookman", Georgia, "Times New Roman", serif"><strong>Type:</strong>' + logType[mes.messageType] + '<br/><strong>Message:</strong>' + mes.message + '<br/><strong>Stack:</strong>' + mes.stack + '<br/><strong>Event Time:</strong>' + mes.eventDT + '<br/></div><br/>'
-                else
-                    msg = '<div style="padding: 2%;text-align: center;font-family: "Bookman", Georgia, "Times New Roman", serif"><strong>Type:</strong>Log<br/><strong>Message:</strong>' + mes.message + '</div><br/>';
 
-                parentDiv.innerHTML = msg;
-                root.appendChild(parentDiv);
+                if (mes.messageType && mes.messageType !== logType.log)
+                   this.createDom('<div style="padding: 2%;text-align: center;font-family: "Bookman", Georgia, "Times New Roman", serif"><strong>Type:</strong>' + logType[mes.messageType] + '<br/><strong>Message:</strong>' + mes.message + '<br/><strong>Stack:</strong>' + mes.stack + '<br/><strong>Event Time:</strong>' + mes.eventDT + '<br/></div><br/>');
+                else
+                    this.createDom('<div style="padding: 2%;text-align: center;font-family: "Bookman", Georgia, "Times New Roman", serif"><strong>Type:</strong>Log<br/><strong>Message:</strong>' + mes.message + '</div><br/>');
+
+
             }
+        }
+
+
+        private createDom(data:string){
+
+            //appending new dom elements to body
+            var root = document.getElementsByTagName('body')[0];
+            var parentDiv = document.createElement('div');
+            parentDiv.innerHTML = data;
+            root.appendChild(parentDiv);
         }
 
         //end private functions
@@ -283,10 +319,9 @@ module consoleLogger{
              //shows us the log history ,does not render as html
 
 
-            if(utilsClass.isFeaturePresent(utils.browserFeatureCheck.sessionStorage) &&
-                utilsClass.isFeaturePresent(utils.browserFeatureCheck.json)){
+            if(utilsClass.isFeaturePresent(utils.browserFeatureCheck.canUseSessionStorage)){
 
-                var tempHis = JSON.parse(window.sessionStorage['logHistory']);
+                var tempHis:Array<logWrapperClass> = JSON.parse(window.sessionStorage['logHistory']);
                 if(tempHis.length ==0){
                     this.handleError(errorType.historyEmpty);
                 }
@@ -316,31 +351,31 @@ module consoleLogger{
             var logData =this.performCommonJob(message,logType.error);
             this.sendDataToService(logData);
             return logData;
-        }
+        };
 
         fatal =(message:any):logWrapperClass =>{
             var logData =this.performCommonJob(message,logType.fatal);
-            this.sendDataToService(logData)
+            this.sendDataToService(logData);
             return logData;
-        }
+        };
 
         debug =(message:any):logWrapperClass => {
 
             var logData =this.performCommonJob(message,logType.debug);
             if (this.sendData && this.sendData.toSend == 2) //2 means to send all
-              this.sendDataToService(logData)
+              this.sendDataToService(logData);
 
             return logData;
-        }
+        };
 
-        warn =(message:any):logWrapperClass=>{
+        warn =(message:any):logWrapperClass=> {
 
             var logData =this.performCommonJob(message,logType.warn);
             if(this.sendData && this.sendData.toSend ==2) //2 means to send all
-               this.sendDataToService(logData)
+               this.sendDataToService(logData);
 
             return logData;
-        }
+        };
 
 
 
@@ -352,9 +387,25 @@ module consoleLogger{
 
            //INIT
 
-            if(showAsHtml)
-            this.showAsHtml =showAsHtml;
-            this.logging = shouldLog;
+            if(showAsHtml === true || showAsHtml.toString().toLowerCase()==='on')
+                this.showAsHtml = true;
+
+
+            if(this.showAsHtml){
+
+                //created a download log button
+                if(utilsClass.isFeaturePresent(utils.browserFeatureCheck.canDownloadLog))
+                this.createDom('<div style="text-align: center"><input type="button" value="Download Log" onclick="consoleLogger.logger.downLoadLog()"/> </div>');
+                else
+                this.createDom('<div style="text-align: center"><strong>You are missing reference of filesaver.js or your browser doesnt support this feature</strong></div>');
+            }
+
+
+            if(shouldLog === true || shouldLog.toString().toLowerCase() ==='on')
+            this.logging =true;
+            else
+            this.logging=false;
+
             this.config(sendDataOptions);
 
         }
