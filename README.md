@@ -112,9 +112,9 @@ How to do ?
 
 6) Export data in csv format:
 
-   a) If your log as html is true than you can export the log data to client machine in .csv format
-   b) To use export feature you need to include filesaver.js to your project
-   c) IE >=10, chrome-1 ,firefox -1 , safari -1 ,opera -1 are supported
+   a) If your log as html is true than you can export the log data to client machine in .csv format <br/>
+   b) To use export feature you need to include filesaver.js to your project <br/>
+   c) IE >=10, chrome-1 ,firefox -1 , safari -1 ,opera -1 are supported <br/>
    
  Browser compatibility: 
  
