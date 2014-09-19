@@ -12,7 +12,7 @@ Features
 
 Hidden Features:
 
-1) Use as a Angularjs service <br/>
+1) Use as an Angularjs service <br/>
 2) No dependency to jQuery or any other library <br/>
 3) Uses localStorage of HTML5 if available <br/>
 4) Uses JSON and fallbacks to forms in old browsers <br/>
