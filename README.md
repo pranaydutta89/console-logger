@@ -1,7 +1,7 @@
 console-logger
 ==============
 
-Features 
+# Features 
 
 1) Simple browser console logging <br/>
 2) Show log data on your html page <br/>
@@ -10,7 +10,7 @@ Features
 5) Send log data to remote server  <br/>
 6) Export data in csv format (only for supported browser's)
 
-Hidden Features:
+# Hidden Features:
 
 1) Use as an Angularjs service <br/>
 2) No dependency to jQuery or any other library <br/>
@@ -21,7 +21,7 @@ Hidden Features:
 
 
 
-How to do ? 
+# How to do ? 
 
 1) Init: Let's do some config
   
@@ -121,13 +121,13 @@ How to do ?
  IE 6+(6-7 don't have console but still you can send logs) <br/>
  All other browser's that support >= ECMAScript 3. 
  
- Note:
+  Note:
  
 - IE6 to IE8 json2/json3.js 
 (sorry can't help it. If it's not present then transport will fallback to form)
 
 
-<h2>Contribute</h2>
+# Contribute
 
 - clone the repo
 - run npm install in bash or anywhere,to install the necessary node packages
